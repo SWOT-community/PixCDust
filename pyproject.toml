@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "swot-pixc-study"
+version = "0.1.0"
+description = ""
+authors = ["zawadzl <lionel.zawadzki@cnes.fr>"]
+readme = "README.md"
+packages = [{include = "swot_pixc_study"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
