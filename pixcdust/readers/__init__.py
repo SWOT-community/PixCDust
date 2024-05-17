@@ -1,0 +1,1 @@
+from pixcdust.readers.netcdf import PixCNcSimpleReader

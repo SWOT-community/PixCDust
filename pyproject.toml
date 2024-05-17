@@ -8,6 +8,17 @@ packages = [{include = "swot_pixc_study"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
+numpy = "^1.26.4"
+fiona = "^1.9.5"
+pandas = "^2.2.0"
+geopandas = "^0.14.3"
+h3 = "^3.7.6"
+xarray = "^2024.2.0"
+shapely = "^2.0.3"
+black = "^24.2.0"
+flake8 = "^7.0.0"
+click = "^8.1.7"
+zcollection = "^2024.2.0"
 
 
 [build-system]
