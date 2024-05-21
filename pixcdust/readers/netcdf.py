@@ -5,15 +5,14 @@ import xarray as xr
 import geopandas as gpd
 
 
-
 @dataclass
 class PixCNcSimpleConstants:
     LONG_NAME: str = "longitude"
     LAT_NAME: str = "latitude"
-    LOC_CYCLE_NUM_FILENAME: int = 4
-    LOC_PASS_NUM_FILENAME: int = 5
-    LOC_TILE_NUM_FILENAME: int = 6
-    LOC_TIME_START_FILENAME: int = 7
+    CYCLE_NUM_NAME: str = 'cycle_number'
+    PASS_NUM_NAME: str = 'pass_number'
+    TILE_NUM_NAME: str = 'tile_number'
+    TIME_START_NAME: str = 'time_granule_start'
     TIME_FORMAT_FILENAME: str = "%Y%m%dT%H%M%S"
     TIME_FORMAT_ATTRS: str = '%Y-%m-%dT%H:%M:%S.%fZ'
 
@@ -44,22 +43,22 @@ class PixCNcSimpleReader:
     data: xr.Dataset = None
 
     @staticmethod
-    def extract_info_from_nc_filename(filename):
+    def extract_info_from_nc_attrs(filename):
+        """missing docstring"""
         cst = PixCNcSimpleConstants()
-        filename_split = filename.split("_")
-        time_start = filename_split[cst.LOC_TIME_START_FILENAME]
 
-        # dt_time_start = datetime.strptime(
-        #     time_start,
-        #     cst.TIME_FORMAT_FILENAME
-        # )
+        with xr.open_dataset(filename) as ds_glob:
+            tile_number = ds_glob.attrs[cst.TILE_NUM_NAME]
+            pass_number = ds_glob.attrs[cst.PASS_NUM_NAME]
+            cycle_number = ds_glob.attrs[cst.CYCLE_NUM_NAME]
+            time_granule_start = ds_glob.attrs[cst.TIME_START_NAME]
+            dt_time_start = datetime.strptime(
+                time_granule_start,
+                cst.TIME_FORMAT_ATTRS
+            )
 
-        cycle_number = int(filename_split[cst.LOC_CYCLE_NUM_FILENAME])
-
-        pass_number = int(filename_split[cst.LOC_PASS_NUM_FILENAME])
-
-        tile_number = filename_split[cst.LOC_TILE_NUM_FILENAME]
-        return time_start, cycle_number, pass_number, tile_number
+        return time_granule_start, dt_time_start, \
+            cycle_number, pass_number, tile_number
 
     def open_dataset(self):
         """
@@ -105,23 +104,20 @@ class PixCNcSimpleReader:
 
         if self.variables:
             # TODO: check if variables in forbidden variables before loading
-            if self.add_orbit_info:
+            if self.orbit_info:
                 self.variables.extend(['tile_num', 'cycle_num', 'pass_num', 'time'])
             self.data = self.data[self.variables]
 
-    @staticmethod
-    def add_orbit_info(ds):
-        cst = PixCNcSimpleConstants()
+    def add_orbit_info(self, ds):
+        """missing docstring"""
         filename = ds.encoding['source']
-        ds_glob = xr.open_dataset(filename)
-        ds['tile_num'] = ds_glob.attrs['tile_number']
-        ds['pass_num'] = ds_glob.attrs['pass_number']
-        ds['cycle_num'] = ds_glob.attrs['cycle_number']
-        time_granule_start = ds_glob.attrs['time_granule_start']
-        dt_time_start = datetime.strptime(
-            time_granule_start,
-            cst.TIME_FORMAT_ATTRS
-        )
+
+        _, dt_time_start, cycle_number, \
+            pass_number, tile_number = self.extract_info_from_nc_attrs(filename)
+
+        ds['tile_num'] = tile_number
+        ds['pass_num'] = pass_number
+        ds['cycle_num'] = cycle_number
         ds['time'] = dt_time_start
 
         return ds

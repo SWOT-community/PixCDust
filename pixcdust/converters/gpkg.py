@@ -17,8 +17,8 @@ class PixCNc2GpkgConverter(PixCConverter):
 
         for path in self.path_in:
             ncsimple = PixCNcSimpleReader(path, self.variables)
-            time_start, cycle_number, pass_number, tile_number = (
-                ncsimple.extract_info_from_nc_filename(os.path.basename(path))
+            time_start, _, cycle_number, pass_number, tile_number = (
+                ncsimple.extract_info_from_nc_attrs(os.path.basename(path))
             )
 
             layer_name = f"{cycle_number}_{pass_number}_\
