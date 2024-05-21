@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["zawadzl <lionel.zawadzki@cnes.fr>"]
 readme = "README.md"
-packages = [{include = "swot_pixc_study"}]
+packages = [{include = "pixcdust"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -19,6 +19,8 @@ black = "^24.2.0"
 flake8 = "^7.0.0"
 click = "^8.1.7"
 zcollection = "^2024.2.0"
+netcdf4 = "^1.6.5"
+tqdm = "^4.66.4"
 
 
 [build-system]

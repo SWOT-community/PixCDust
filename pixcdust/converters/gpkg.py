@@ -1,4 +1,6 @@
 import os
+from tqdm import tqdm
+
 import fiona
 
 from pixcdust.converters.core import PixCConverter
@@ -12,22 +14,23 @@ class PixCNc2GpkgConverter(PixCConverter):
         """missing Docstring"""
         self.database_from_mf_nc()
 
-    def database_from_mf_nc(self):
+    def database_from_mf_nc(self, layer_name: str=None):
         """missing Docstring"""
 
-        for path in self.path_in:
+        for path in tqdm(self.path_in):
             ncsimple = PixCNcSimpleReader(path, self.variables)
-            time_start, _, cycle_number, pass_number, tile_number = (
-                ncsimple.extract_info_from_nc_attrs(path)
-            )
+            if layer_name is None:
+                time_start, _, cycle_number, pass_number, tile_number = (
+                    ncsimple.extract_info_from_nc_attrs(path)
+                )
 
-            layer_name = f"{cycle_number}_{pass_number}_\
-                {tile_number}_{time_start}"
+                layer_name = f"{cycle_number}_{pass_number}_\
+                    {tile_number}_{time_start}"
 
             # cheking if output file and layer already exist
             if os.path.exists(self.path_out) and self.mode == "a":
                 if layer_name in fiona.listlayers(self.path_out):
-                    print(
+                    tqdm.write(
                         f"skipping layer {layer_name} \
                             (already in geopackage {self.path_out})"
                     )
@@ -39,7 +42,7 @@ class PixCNc2GpkgConverter(PixCConverter):
             )
 
             if gdf.size == 0:
-                print(
+                tqdm.write(
                     f"--File {path} combined with area of interest\
                         returned empty. Skipping it"
                 )
@@ -47,4 +50,4 @@ class PixCNc2GpkgConverter(PixCConverter):
 
             # writing pixc layer in output file
             gdf.to_file(self.path_out, layer=layer_name, driver="GPKG")
-            print(f"--File{path} processed")
+            tqdm.write(f"--File{path} processed")
