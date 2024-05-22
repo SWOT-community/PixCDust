@@ -2,27 +2,33 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 import xarray as xr
+import pandas as pd
 import geopandas as gpd
 
 
 @dataclass
 class PixCNcSimpleConstants:
-    LONG_NAME: str = "longitude"
-    LAT_NAME: str = "latitude"
-    CYCLE_NUM_NAME: str = 'cycle_number'
-    PASS_NUM_NAME: str = 'pass_number'
-    TILE_NUM_NAME: str = 'tile_number'
-    TIME_START_NAME: str = 'time_granule_start'
-    TIME_FORMAT_FILENAME: str = "%Y%m%dT%H%M%S"
-    TIME_FORMAT_ATTRS: str = '%Y-%m-%dT%H:%M:%S.%fZ'
+    """Class setting defaults values in SWOT pixel cloud files \
+        such as name of attributes and variables
+    """
+    default_long_name: str = "longitude"
+    default_lat_name: str = "latitude"
+    default_cyc_num_name: str = 'cycle_number'
+    default_pass_num_name: str = 'pass_number'
+    default_tile_num_name: str = 'tile_number'
+    default_time_start_name: str = 'time_granule_start'
+    default_time_format_filename: str = "%Y%m%dT%H%M%S"
+    default_time_format_attrs: str = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 @dataclass
 class PixCNcSimpleReader:
-    """
-    class for reading SWOT Pixel cloud official format files reader
+    """Class for reading SWOT Pixel cloud official format files reader
     for most simple uses cases:
     It only reads in the pixel_cloud group
+
+    Returns:
+        _type_: _description_
     """
 
     path: list[str] | str
@@ -43,26 +49,36 @@ class PixCNcSimpleReader:
     data: xr.Dataset = None
 
     @staticmethod
-    def extract_info_from_nc_attrs(filename):
-        """missing docstring"""
+    def extract_info_from_nc_attrs(filename: str):
+        """Extracts orbit information from global attributes in SWOT pixel cloud netcdf
+
+        Args:
+            filename (str): path of SWOT PIXC etcdf file
+
+        Returns:
+            str: time of granule start
+            datetime.datetime: time of granule start
+            int: cycle number
+            int: pass number
+            str: tile number
+        """
         cst = PixCNcSimpleConstants()
 
-        with xr.open_dataset(filename) as ds_glob:
-            tile_number = ds_glob.attrs[cst.TILE_NUM_NAME]
-            pass_number = ds_glob.attrs[cst.PASS_NUM_NAME]
-            cycle_number = ds_glob.attrs[cst.CYCLE_NUM_NAME]
-            time_granule_start = ds_glob.attrs[cst.TIME_START_NAME]
+        with xr.open_dataset(filename, engine='netcdf4') as ds_glob:
+            tile_number = ds_glob.attrs[cst.default_tile_num_name]
+            pass_number = ds_glob.attrs[cst.default_pass_num_name]
+            cycle_number = ds_glob.attrs[cst.default_cyc_num_name]
+            time_granule_start = ds_glob.attrs[cst.default_time_start_name]
             dt_time_start = datetime.strptime(
                 time_granule_start,
-                cst.TIME_FORMAT_ATTRS
+                cst.default_time_format_attrs
             )
 
         return time_granule_start, dt_time_start, \
             cycle_number, pass_number, tile_number
 
     def open_dataset(self):
-        """
-        reads one pixc file and returns an xarray
+        """reads one pixc file and stores data in self.data
         """
         self.data = xr.open_dataset(
             self.path,
@@ -73,13 +89,18 @@ class PixCNcSimpleReader:
             self.data = self.data[self.variables]
 
     def open_mfdataset(self, orbit_info: bool = False):
-        """
-        reads one or multiple pixc files and returns a nested xarray
+        """ reads one or multiple pixc files and store a nested xarray in self.data
         In this case, variables that are not one-dimensional
         along `points` dimension are not allowed and will be dropped:
             - 'pixc_line_qual',
             - 'pixc_line_to_tvp',
             - 'interferogram'
+            - etc.
+            
+
+        Args:
+            orbit_info (bool, optional): option to extract\
+                the orbit information in data. Defaults to False.
         """
 
         if not orbit_info:
@@ -99,21 +120,30 @@ class PixCNcSimpleReader:
                 drop_variables=self.forbidden_variables,
                 combine="nested",
                 concat_dim="points",
-                preprocess=self.add_orbit_info,
+                preprocess=self.__add_orbit_info,
             )
 
         if self.variables:
             # TODO: check if variables in forbidden variables before loading
-            if self.orbit_info:
+            if orbit_info:
                 self.variables.extend(['tile_num', 'cycle_num', 'pass_num', 'time'])
             self.data = self.data[self.variables]
 
-    def add_orbit_info(self, ds):
-        """missing docstring"""
+    def __add_orbit_info(self, ds) -> xr.Dataset:
+        """preprocessing function adding orbit information in pixc dataset
+
+        Args:
+            ds (xarray.Dataset): pixc dataset read by xarray.open_dataset
+
+        Returns:
+            xarray.Dataset: dataset augmented with orbit information for each index
+        """
         filename = ds.encoding['source']
 
-        _, dt_time_start, cycle_number, \
-            pass_number, tile_number = self.extract_info_from_nc_attrs(filename)
+        _, dt_time_start, cycle_number, pass_number, tile_number =\
+            self.extract_info_from_nc_attrs(
+                filename
+            )
 
         ds['tile_num'] = tile_number
         ds['pass_num'] = pass_number
@@ -122,27 +152,48 @@ class PixCNcSimpleReader:
 
         return ds
 
-    def to_xarray(self):
-        """missing docstring"""
+    def to_xarray(self) -> xr.Dataset:
+        """returning an xarray.Dataset from object
+        (this function exists for potential future compatibility)
+
+        Returns:
+            xr.Dataset: Dataset with information from file
+        """
+
         return self.data
 
-    def to_dataframe(self):
-        """missing docstring"""
+    def to_dataframe(self)-> pd.DataFrame:
+        """returns a pandas.DataFrame from object
+
+        Returns:
+            pd.DataFrame: Dataframe with information from file
+        """
         return self.data.to_dataframe()
 
     def to_geodataframe(
             self,
-            crs=4326,
+            crs: str | int=4326,
             area_of_interest: gpd.GeoDataFrame = None,
         ) -> gpd.GeoDataFrame:
-        """missing docstring"""
+        """_summary_
+
+        Args:
+            crs (str | int, optional): Coordinate Reference System.\
+                Defaults to 4326.
+            area_of_interest (gpd.GeoDataFrame, optional): a geodataframe\
+                containing polygons of interest where data will be restricted.\
+                Defaults to None.
+
+        Returns:
+            gpd.GeoDataFrame: a geodataframe with information from file
+        """
 
         cst = PixCNcSimpleConstants()
         df = self.to_dataframe()
 
         gdf = gpd.GeoDataFrame(
             df,
-            geometry=gpd.points_from_xy(df[cst.LONG_NAME], df[cst.LAT_NAME]),
+            geometry=gpd.points_from_xy(df[cst.default_long_name], df[cst.default_lat_name]),
             crs=crs,
         )
         if area_of_interest is not None:

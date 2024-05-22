@@ -8,14 +8,22 @@ from pixcdust.readers.netcdf import PixCNcSimpleReader
 
 
 class PixCNc2GpkgConverter(PixCConverter):
-    """missing docstring"""
+    """Class for converting Pixel Cloud files to Geopackage database
+
+    """
 
     def database_from_single_nc(self):
-        """missing Docstring"""
+        """function to create a database from a single netcdf PIXC file
+        (calls the corresponding multifile function, this function exist for future compatibility)
+        """
         self.database_from_mf_nc()
 
-    def database_from_mf_nc(self, layer_name: str=None):
-        """missing Docstring"""
+    def database_from_mf_nc(self, layer_name: str = None):
+        """function to create a database from a single or multiple netcdf PIXC files
+
+        Args:
+            layer_name (str, optional): _description_. Defaults to None.
+        """
 
         for path in tqdm(self.path_in):
             ncsimple = PixCNcSimpleReader(path, self.variables)
@@ -35,7 +43,7 @@ class PixCNc2GpkgConverter(PixCConverter):
                             (already in geopackage {self.path_out})"
                     )
                     continue
-
+            # converting data from xarray to geodataframe
             ncsimple.open_dataset()
             gdf = ncsimple.to_geodataframe(
                 area_of_interest=self.area_of_interest
@@ -48,6 +56,6 @@ class PixCNc2GpkgConverter(PixCConverter):
                 )
                 continue
 
-            # writing pixc layer in output file
+            # writing pixc layer in output file, geopackage
             gdf.to_file(self.path_out, layer=layer_name, driver="GPKG")
             tqdm.write(f"--File{path} processed")

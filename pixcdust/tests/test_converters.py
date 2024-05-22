@@ -9,14 +9,20 @@ from pixcdust.converters.zarr import PixCNc2ZarrConverter
 
 
 class TestConverter(unittest.TestCase):
+    """Class for testing Converters
+    """
 
     def setUp(self):
+        """function to set up the test environment
+        """
         self.dir_swot = "/home/hysope2/STUDIES/SWOT_Sudan/DATA/Raw_Data"
         self.files_swot_pxc = os.path.join(self.dir_swot, "SWOT*.nc")
         self.paths = sorted(glob(self.files_swot_pxc))
         self.list_vars = ["height", "sig0", "classification", "geoid", "cross_track"]
 
     def test_convert_nc_to_gpkg(self):
+        """function for testing the conversion from netcdf to geopackage
+        """
 
         restrict = "/home/hysope2/STUDIES/SWOT_Kakhovka/DATA/kakhovka.gpkg"
         aoi = gpd.read_file(restrict)
@@ -33,6 +39,8 @@ class TestConverter(unittest.TestCase):
         self.assertIsInstance(pixc, PixCNc2GpkgConverter)
 
     def test_convert_nc_to_zarr(self):
+        """function for testing the conversion from netcdf to zarr with zcollection
+        """
 
         pixc = PixCNc2ZarrConverter(
             self.paths,
