@@ -10,7 +10,7 @@ class PixCConverter:
         path_out: str,
         variables: list[str] = None,
         area_of_interest: gpd.GeoDataFrame = None,
-        mode: str = "a",
+        mode: str = "w",
     ):
 
         if isinstance(path_in, list):
@@ -25,12 +25,12 @@ class PixCConverter:
         self.path_out = path_out
         self.variables = variables
         self.area_of_interest = area_of_interest
-        if mode in ["a", "o"]:
+        if mode in ["w", "o"]:
             self.mode = mode
         else:
             raise IOError(
                 f"Expected optional argument `mode` \
-                to be 'a'(append) or 'o'(overwrite), \
+                to be 'w'(write/append) or 'o'(overwrite), \
                 received {mode} instead"
             )
 
