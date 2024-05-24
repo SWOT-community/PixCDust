@@ -1,11 +1,10 @@
-import os
 import click
-from glob import glob
 
 import geopandas as gpd
 
 from pixcdust.converters.gpkg import PixCNc2GpkgConverter
 from pixcdust.converters.zarr import PixCNc2ZarrConverter
+from pixcdust.converters.shapefile import PixCNc2ShpConverter
 
 
 # dir_swot = "/home/hysope2/STUDIES/SWOT_Sudan/DATA/Raw_Data"
@@ -38,7 +37,7 @@ def paths_glob(ctx, param, paths):
 @click.argument(
     'format_out',
     type=click.Choice(
-        ['gpkg', 'zarr'],
+        ['gpkg', 'zarr', 'shp'],
         case_sensitive=False
     ),
 )
@@ -58,7 +57,7 @@ def cli(
     variables: list[str],
     aoi: str,
     mode: str,
-    ):
+        ):
     """_summary_
 
     Args:
@@ -82,7 +81,7 @@ def cli(
                     'variables',
                     "apart from the commas, no special caracter may be used",
                 )
-        
+
     else:
         list_vars = None
 
@@ -107,12 +106,20 @@ def cli(
             area_of_interest=gdf_aoi,
             mode=mode,
         )
+    elif format_out.lower() == 'shp':
+        pixc = PixCNc2ShpConverter(
+            paths_in,
+            path_out,
+            variables=list_vars,
+            area_of_interest=gdf_aoi,
+            mode=mode,
+        )
     else:
         raise NotImplementedError(
             f'the conversion format {format_out} has not been implemented yet',
             )
 
-    pixc.database_from_mf_nc()
+    pixc.database_from_nc()
 
 
 def main():

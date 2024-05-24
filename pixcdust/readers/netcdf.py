@@ -1,3 +1,5 @@
+"""This module reads SWOT Pixel Cloud Netcdfs"""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -5,6 +7,7 @@ import xarray as xr
 import pandas as pd
 import geopandas as gpd
 
+from pixcdust.converters.geo_utils import geoxarray_to_geodataframe
 
 @dataclass
 class PixCNcSimpleConstants:
@@ -50,7 +53,8 @@ class PixCNcSimpleReader:
 
     @staticmethod
     def extract_info_from_nc_attrs(filename: str):
-        """Extracts orbit information from global attributes in SWOT pixel cloud netcdf
+        """Extracts orbit information from global attributes\
+            in SWOT pixel cloud netcdf
 
         Args:
             filename (str): path of SWOT PIXC etcdf file
@@ -89,14 +93,15 @@ class PixCNcSimpleReader:
             self.data = self.data[self.variables]
 
     def open_mfdataset(self, orbit_info: bool = False):
-        """ reads one or multiple pixc files and store a nested xarray in self.data
+        """ reads one or multiple pixc files and stores\
+            a nested xarray in self.data.
         In this case, variables that are not one-dimensional
         along `points` dimension are not allowed and will be dropped:
             - 'pixc_line_qual',
             - 'pixc_line_to_tvp',
             - 'interferogram'
             - etc.
-            
+
 
         Args:
             orbit_info (bool, optional): option to extract\
@@ -126,7 +131,9 @@ class PixCNcSimpleReader:
         if self.variables:
             # TODO: check if variables in forbidden variables before loading
             if orbit_info:
-                self.variables.extend(['tile_num', 'cycle_num', 'pass_num', 'time'])
+                self.variables.extend(
+                    ['tile_num', 'cycle_num', 'pass_num', 'time']
+                )
             self.data = self.data[self.variables]
 
     def __add_orbit_info(self, ds) -> xr.Dataset:
@@ -136,7 +143,8 @@ class PixCNcSimpleReader:
             ds (xarray.Dataset): pixc dataset read by xarray.open_dataset
 
         Returns:
-            xarray.Dataset: dataset augmented with orbit information for each index
+            xarray.Dataset: dataset augmented with orbit\
+                information for each index
         """
         filename = ds.encoding['source']
 
@@ -162,7 +170,7 @@ class PixCNcSimpleReader:
 
         return self.data
 
-    def to_dataframe(self)-> pd.DataFrame:
+    def to_dataframe(self) -> pd.DataFrame:
         """returns a pandas.DataFrame from object
 
         Returns:
@@ -172,9 +180,8 @@ class PixCNcSimpleReader:
 
     def to_geodataframe(
             self,
-            crs: str | int=4326,
-            area_of_interest: gpd.GeoDataFrame = None,
-        ) -> gpd.GeoDataFrame:
+            **kwargs
+            ) -> gpd.GeoDataFrame:
         """_summary_
 
         Args:
@@ -189,14 +196,11 @@ class PixCNcSimpleReader:
         """
 
         cst = PixCNcSimpleConstants()
-        df = self.to_dataframe()
 
-        gdf = gpd.GeoDataFrame(
-            df,
-            geometry=gpd.points_from_xy(df[cst.default_long_name], df[cst.default_lat_name]),
-            crs=crs,
+        return geoxarray_to_geodataframe(
+            self.data.to_xarray(),
+            long_name=cst.default_long_name,
+            lat_name=cst.default_lat_name,
+            **kwargs,
         )
-        if area_of_interest is not None:
-            gdf = gdf.overlay(area_of_interest, how="intersection")
 
-        return gdf

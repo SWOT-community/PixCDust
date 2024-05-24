@@ -1,10 +1,13 @@
 import os
 from tqdm import tqdm
+from dataclasses import dataclass
 
 import fiona
+import geopandas as gpd
 
 from pixcdust.converters.core import PixCConverter
 from pixcdust.readers.netcdf import PixCNcSimpleReader
+from pixcdust.readers.zarr import PixCZarrReader
 
 
 class PixCNc2GpkgConverter(PixCConverter):
@@ -12,14 +15,9 @@ class PixCNc2GpkgConverter(PixCConverter):
 
     """
 
-    def database_from_single_nc(self):
-        """function to create a database from a single netcdf PIXC file
-        (calls the corresponding multifile function, this function exist for future compatibility)
-        """
-        self.database_from_mf_nc()
-
-    def database_from_mf_nc(self, layer_name: str = None):
-        """function to create a database from a single or multiple netcdf PIXC files
+    def database_from_nc(self, layer_name: str = None):
+        """function to create a database from a single or\
+            multiple netcdf PIXC files
 
         Args:
             layer_name (str, optional): _description_. Defaults to None.
@@ -36,7 +34,7 @@ class PixCNc2GpkgConverter(PixCConverter):
                     {tile_number}_{time_start}"
 
             # cheking if output file and layer already exist
-            if os.path.exists(self.path_out) and self.mode == "a":
+            if os.path.exists(self.path_out) and self.mode == "w":
                 if layer_name in fiona.listlayers(self.path_out):
                     tqdm.write(
                         f"skipping layer {layer_name} \
@@ -59,3 +57,21 @@ class PixCNc2GpkgConverter(PixCConverter):
             # writing pixc layer in output file, geopackage
             gdf.to_file(self.path_out, layer=layer_name, driver="GPKG")
             tqdm.write(f"--File{path} processed")
+
+
+@dataclass
+class PixCZarr2GpkgConverter:
+    """Class for converting Pixel Cloud zcollection to Geopackage database
+
+    """
+    path: str
+    data: gpd.GeoDataFrame = None
+
+    def __post_init__(self):
+        self.__collection = PixCZarrReader(self.path)
+        self.__collection.read()
+
+    def convert(self, path_out: str):
+        self.data = self.__collection.to_geodataframe()
+        self.data.to_file(path_out, driver="GPKG")
+

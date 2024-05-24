@@ -34,10 +34,6 @@ class PixCConverter:
                 received {mode} instead"
             )
 
-    def database_from_single_nc(self):
-        """missing Docstring"""
-        raise NotImplementedError
-
-    def database_from_mf_nc(self):
+    def database_from_nc(self):
         """missing Docstring"""
         raise NotImplementedError
