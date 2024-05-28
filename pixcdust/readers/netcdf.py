@@ -57,21 +57,21 @@ class PixCNcSimpleReader:
             in SWOT pixel cloud netcdf
 
         Args:
-            filename (str): path of SWOT PIXC etcdf file
+            filename (str): path of SWOT PIXC Netcdf file
 
         Returns:
             str: time of granule start
             datetime.datetime: time of granule start
             int: cycle number
             int: pass number
-            str: tile number
+            int: tile number
         """
         cst = PixCNcSimpleConstants()
 
         with xr.open_dataset(filename, engine='netcdf4') as ds_glob:
-            tile_number = ds_glob.attrs[cst.default_tile_num_name]
-            pass_number = ds_glob.attrs[cst.default_pass_num_name]
-            cycle_number = ds_glob.attrs[cst.default_cyc_num_name]
+            tile_number = int(ds_glob.attrs[cst.default_tile_num_name])
+            pass_number = int(ds_glob.attrs[cst.default_pass_num_name])
+            cycle_number = int(ds_glob.attrs[cst.default_cyc_num_name])
             time_granule_start = ds_glob.attrs[cst.default_time_start_name]
             dt_time_start = datetime.strptime(
                 time_granule_start,
@@ -198,7 +198,7 @@ class PixCNcSimpleReader:
         cst = PixCNcSimpleConstants()
 
         return geoxarray_to_geodataframe(
-            self.data.to_xarray(),
+            self.to_xarray(),
             long_name=cst.default_long_name,
             lat_name=cst.default_lat_name,
             **kwargs,

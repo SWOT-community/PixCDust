@@ -1,4 +1,10 @@
+from dataclasses import dataclass
+import operator
+from ast import literal_eval
+
 import geopandas as gpd
+
+from pixcdust.dggs import h3_tools
 
 
 class PixCConverter:
@@ -11,6 +17,7 @@ class PixCConverter:
         variables: list[str] = None,
         area_of_interest: gpd.GeoDataFrame = None,
         mode: str = "w",
+        compute_wse: bool = True,
     ):
 
         if isinstance(path_in, list):
@@ -34,6 +41,88 @@ class PixCConverter:
                 received {mode} instead"
             )
 
+        self._wse = compute_wse
+        # we need some vars to compute wse
+        if self._wse and self.variables is not None:
+            for var in self._get_vars_wse_computation():
+                self.variables.append(var)
+
     def database_from_nc(self):
         """missing Docstring"""
         raise NotImplementedError
+
+    @staticmethod
+    def _get_vars_wse_computation() -> list[str]:
+        return ['height', 'geoid']
+
+    @staticmethod
+    def _get_name_wse_var() -> str:
+        return 'wse'
+
+
+@dataclass
+class GeoLayerH3Projecter:
+    """Class for adding H3 projections to databases
+
+    """
+    data: gpd.GeoDataFrame
+    variable: str
+    resolution: int
+
+    def filter_variable(self, conditions: dict):
+        """filters from xarray dataset based 
+        on operator and threshold on specific variables
+
+        Args:
+            conditions (dict): specifies the filters. \
+                Example: {\
+                    "sig0":{'operator': "ge", 'treshold': 20},\
+                    "classification":{'operator': "ge", 'threshold': 3},\
+                    }
+
+        Raises:
+            IOError: if variable provided in conditions are not\
+                in self.data.columns
+            IOError: if 'operator' and 'to' keys are not\
+                in conditions
+            IOError: if operator is not the function name of\
+                the operator module
+        """
+        _k_operator = 'operator'
+        _k_to = 'threshold'
+        # Test if conditions dict meets specifications
+        for k in conditions.keys():
+            if k not in self.data.columns:
+                raise IOError(
+                    f'dict conditions expected existing\
+                        variables (in {self.data.columns}),\
+                        received {k}'
+                )
+            for instructions in conditions[k].keys():
+                if instructions not in [_k_operator, _k_to]:
+                    raise IOError(
+                        f'dict conditions expected {_k_to} and {_k_operator}\
+                        keys in dict {conditions},\
+                        received {instructions}'
+                    )
+                if conditions[k][_k_operator] not in operator.__dict__:
+                    raise IOError(
+                        f'operator expected a function name\
+                            from the operator built-in module\
+                            {operator.__dict__},\
+                            found {conditions[k][_k_operator]} instead'
+                    )
+            ope = literal_eval(f"operator.{conditions[k][_k_operator]}")
+            self.data = self.data[
+                ope(
+                    self.data[k],
+                    conditions[k][_k_to],
+                )
+            ]
+
+    def compute_h3_layer(self):
+        self.data = h3_tools.gdf_to_h3_gdf(
+            self.data,
+            self.resolution,
+            self.variable,
+        )

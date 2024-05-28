@@ -5,9 +5,10 @@ from dataclasses import dataclass
 import fiona
 import geopandas as gpd
 
-from pixcdust.converters.core import PixCConverter
+from pixcdust.converters.core import PixCConverter, GeoLayerH3Projecter
 from pixcdust.readers.netcdf import PixCNcSimpleReader
 from pixcdust.readers.zarr import PixCZarrReader
+from pixcdust.readers.gpkg import PixCGpkgReader
 
 
 class PixCNc2GpkgConverter(PixCConverter):
@@ -15,23 +16,22 @@ class PixCNc2GpkgConverter(PixCConverter):
 
     """
 
-    def database_from_nc(self, layer_name: str = None):
-        """function to create a database from a single or\
+    def database_from_nc(self):
+        """function to create a geopackage database from a single or\
             multiple netcdf PIXC files
 
-        Args:
-            layer_name (str, optional): _description_. Defaults to None.
         """
-
         for path in tqdm(self.path_in):
             ncsimple = PixCNcSimpleReader(path, self.variables)
-            if layer_name is None:
-                time_start, _, cycle_number, pass_number, tile_number = (
-                    ncsimple.extract_info_from_nc_attrs(path)
-                )
 
-                layer_name = f"{cycle_number}_{pass_number}_\
-                    {tile_number}_{time_start}"
+            # computing layer_name
+            _, dt_time_start, cycle_number, pass_number, tile_number = (
+                ncsimple.extract_info_from_nc_attrs(path)
+            )
+            time_start = dt_time_start.strftime('%Y%m%d')
+
+            layer_name = f"{cycle_number}_{pass_number}_\
+{tile_number}_{time_start}"
 
             # cheking if output file and layer already exist
             if os.path.exists(self.path_out) and self.mode == "w":
@@ -54,9 +54,58 @@ class PixCNc2GpkgConverter(PixCConverter):
                 )
                 continue
 
+            if self._wse:
+                gdf[self._get_name_wse_var()] = \
+                    gdf[self._get_vars_wse_computation()[0]] -\
+                    gdf[self._get_vars_wse_computation()[1]]
             # writing pixc layer in output file, geopackage
             gdf.to_file(self.path_out, layer=layer_name, driver="GPKG")
-            tqdm.write(f"--File{path} processed")
+            # tqdm.write(f"--File {path} processed")
+
+
+@dataclass      
+class GpkgH3Projecter:
+    path: str
+    variable: str
+    h3_res: int
+    conditions: dict = None
+    h3_layer_pattern: str = '_h3'
+    path_out: str = None
+    database: PixCGpkgReader = None
+
+    def __post_init__(self):
+        self.database = PixCGpkgReader(self.path)
+        self.database.layers = [
+            layer for layer in fiona.listlayers(self.path)
+            if not layer.endswith(self.h3_layer_pattern)
+            ]
+
+        if self.path_out is None:
+            self.path_out = self.path
+
+    def compute_layers(self):
+        for layer in tqdm(self.database.layers, desc="Layers"):
+            gdf = self.database.get_layer(layer)
+            h3_gdf = self._compute_layer(gdf)
+
+            layername_out = f"{layer}_{self.variable}_\
+{self.h3_res}_{self.h3_layer_pattern}"
+
+            h3_gdf.to_file(self.path_out, layer=layername_out, driver="GPKG")
+            # tqdm.write(layername_out)
+            # lancer write avec le bon nom
+
+    def _compute_layer(self, gdf):
+        geolayer = GeoLayerH3Projecter(
+            gdf,
+            self.variable,
+            self.h3_res,
+        )
+        if self.conditions:
+            geolayer.filter_variable(self.conditions)
+        geolayer.compute_h3_layer()
+
+        return geolayer.data
 
 
 @dataclass
@@ -74,4 +123,3 @@ class PixCZarr2GpkgConverter:
     def convert(self, path_out: str):
         self.data = self.__collection.to_geodataframe()
         self.data.to_file(path_out, driver="GPKG")
-
