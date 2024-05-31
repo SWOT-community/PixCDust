@@ -100,7 +100,7 @@ def cli(
         )
     elif format_out.lower() == 'zarr':
         pixc = PixCNc2ZarrConverter(
-            paths_in,
+            sorted(paths_in),
             path_out,
             variables=list_vars,
             area_of_interest=gdf_aoi,

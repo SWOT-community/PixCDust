@@ -1,9 +1,5 @@
 import h3
-import h3.unstable.vect
-import h3.api.numpy_int
-
 from shapely.geometry import Polygon
-
 
 
 def cell_to_shapely(cell):

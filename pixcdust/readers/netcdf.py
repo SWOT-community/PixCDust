@@ -1,7 +1,9 @@
 """This module reads SWOT Pixel Cloud Netcdfs"""
 
 from dataclasses import dataclass, field
+from typing import Tuple
 from datetime import datetime
+import numpy as np
 
 import xarray as xr
 import pandas as pd
@@ -50,6 +52,7 @@ class PixCNcSimpleReader:
         ]
     )
     data: xr.Dataset = None
+    cst = PixCNcSimpleConstants()
 
     @staticmethod
     def extract_info_from_nc_attrs(filename: str):
@@ -69,14 +72,14 @@ class PixCNcSimpleReader:
         cst = PixCNcSimpleConstants()
 
         with xr.open_dataset(filename, engine='netcdf4') as ds_glob:
-            tile_number = int(ds_glob.attrs[cst.default_tile_num_name])
-            pass_number = int(ds_glob.attrs[cst.default_pass_num_name])
-            cycle_number = int(ds_glob.attrs[cst.default_cyc_num_name])
+            tile_number = np.uint16(ds_glob.attrs[cst.default_tile_num_name])
+            pass_number = np.uint16(ds_glob.attrs[cst.default_pass_num_name])
+            cycle_number = np.uint16(ds_glob.attrs[cst.default_cyc_num_name])
             time_granule_start = ds_glob.attrs[cst.default_time_start_name]
             dt_time_start = datetime.strptime(
                 time_granule_start,
                 cst.default_time_format_attrs
-            )
+            ).replace(microsecond=0)
 
         return time_granule_start, dt_time_start, \
             cycle_number, pass_number, tile_number
@@ -92,7 +95,10 @@ class PixCNcSimpleReader:
         if self.variables:
             self.data = self.data[self.variables]
 
-    def open_mfdataset(self, orbit_info: bool = False):
+    def open_mfdataset(
+        self,
+        orbit_info: bool = False,
+        ):
         """ reads one or multiple pixc files and stores\
             a nested xarray in self.data.
         In this case, variables that are not one-dimensional
@@ -116,6 +122,7 @@ class PixCNcSimpleReader:
                 drop_variables=self.forbidden_variables,
                 combine="nested",
                 concat_dim="points",
+                preprocess=self.__preprocess_types,
             )
         else:
             self.data = xr.open_mfdataset(
@@ -125,7 +132,7 @@ class PixCNcSimpleReader:
                 drop_variables=self.forbidden_variables,
                 combine="nested",
                 concat_dim="points",
-                preprocess=self.__add_orbit_info,
+                preprocess=self.__preprocess_types_and_add_orbit_info,
             )
 
         if self.variables:
@@ -135,8 +142,40 @@ class PixCNcSimpleReader:
                     ['tile_num', 'cycle_num', 'pass_num', 'time']
                 )
             self.data = self.data[self.variables]
+            
+        # if reorder_from_sequence:
+        #     for var in reorder_from_sequence:
+        #         if var not in self.variables:
+        #             raise ValueError(
+        #                 f"Expected vars in reordering sequence \
+        #                     to be within data variables {self.variables} \
+        #                     received {var}"
+        #             )
+        #     self.__reorder_from_sequence(
+        #         reorder_from_sequence
+        #     )
 
-    def __add_orbit_info(self, ds) -> xr.Dataset:
+    def __preprocess_types(self, ds) -> xr.Dataset:
+        """preprocessing function changing types in pixc dataset
+
+        Args:
+            ds (xarray.Dataset): pixc dataset read by xarray.open_dataset
+
+        Returns:
+            xarray.Dataset: dataset with enhanced types
+        """
+        ds[self.cst.default_long_name] = ds[self.cst.default_long_name].astype(
+            np.float32,
+            copy=False,
+        )
+        ds[self.cst.default_lat_name] = ds[self.cst.default_lat_name].astype(
+            np.float32,
+            copy=False,
+        )
+
+        return ds
+    
+    def __preprocess_types_and_add_orbit_info(self, ds) -> xr.Dataset:
         """preprocessing function adding orbit information in pixc dataset
 
         Args:
@@ -146,6 +185,8 @@ class PixCNcSimpleReader:
             xarray.Dataset: dataset augmented with orbit\
                 information for each index
         """
+        ds[self.cst.default_long_name] = ds[self.cst.default_long_name].astype(np.float32, copy=False)
+
         filename = ds.encoding['source']
 
         _, dt_time_start, cycle_number, pass_number, tile_number =\

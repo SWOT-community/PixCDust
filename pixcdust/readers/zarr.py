@@ -1,7 +1,9 @@
 """This module reads the zarr archives created by the converters"""
 
 from dataclasses import dataclass
+from typing import Optional, Tuple
 
+import datetime
 import xarray as xr
 import geopandas as gpd
 import zcollection
@@ -18,25 +20,32 @@ class PixCZarrReader:
 
     def read(
         self,
-        cycle_number: int = None,
-        pass_number: int = None,
-        tile_number: int = None,
+        date_interval: Optional[
+            Tuple[datetime.datetime, datetime.datetime]
+            ] | None = None,
             ):
+
         collection: zcollection.Dataset = zcollection.open_collection(
             self.path,
             mode='r',
         )
-        self.data = collection.load()
-        # filters=lambda keys: keys['month'] == 6 and keys['year'] == 2000)
 
-    def __repr__(self):
-        return self.data
+        if date_interval:
+            date_min = date_interval[0]
+            date_max = date_interval[1]
+            self.data = collection.load(
+                filters=lambda keys: date_min <= datetime.datetime(
+                    keys['year'], keys['month'], keys['day'],
+                    keys['hour'], keys['minute'], keys['second'],
+                ) <= date_max
+            )
+        else:
+            self.data = collection.load()
 
     def to_xarray(self):
+        if self.data is None:
+            return xr.Dataset()
         return self.data.to_xarray()
-
-    def to_dataframe(self):
-        return
 
     def to_geodataframe(
         self,
@@ -54,6 +63,8 @@ class PixCZarrReader:
         Returns:
             gpd.GeoDataFrame: a geodataframe with information from file
         """
+        if self.data is None:
+            return gpd.GeoDataFrame()
 
         cst = PixCNcSimpleConstants()
 

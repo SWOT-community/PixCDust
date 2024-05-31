@@ -1,8 +1,6 @@
 
 import geopandas as gpd
 import h3
-import h3.unstable.vect
-import h3.api.numpy_int
 
 from shapely.geometry import Polygon
 

@@ -27,6 +27,8 @@ pyarrow = "^16.1.0"
 
 [tool.poetry.group.dev.dependencies]
 decorator = "^5.1.1"
+ipykernel = "^6.29.4"
+matplotlib = "^3.9.0"
 
 [build-system]
 requires = ["poetry-core"]
