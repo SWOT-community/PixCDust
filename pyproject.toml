@@ -23,6 +23,7 @@ netcdf4 = "^1.6.5"
 tqdm = "^4.66.4"
 pyogrio = "^0.8.0"
 pyarrow = "^16.1.0"
+eodag = "^2.12.1"
 
 
 [tool.poetry.group.dev.dependencies]
