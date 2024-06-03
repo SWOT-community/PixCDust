@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional, List
 from tqdm import tqdm
 
 import fiona
@@ -11,11 +12,12 @@ class PixCGpkgReader:
     path: str
     layers: list[str] = None
     area_of_interest: gpd.GeoDataFrame = None
+    data: gpd.GeoDataFrame = None
 
     def __post_init__(self):
         self.layers = fiona.listlayers(self.path)
 
-    def load_layer(self, layername: str) -> gpd.GeoDataFrame:
+    def read_single_layer(self, layername: str) -> gpd.GeoDataFrame:
         layer_data = gpd.read_file(
             self.path,
             engine='pyogrio',
@@ -33,23 +35,28 @@ class PixCGpkgReader:
 
         return layer_data
 
-    def load_all_layers(self) -> gpd.GeoDataFrame:
-        joined_data = None
+    def read(
+        self,
+        layers: Optional[List[str]] | None = None
+            ):
 
-        for layer in tqdm(self.layers):
+        self.data = None
 
-            layer_data = self.load_layer(
+        if layers is None:
+            layers = self.layers
+
+        for layer in tqdm(layers):
+
+            layer_data = self.read_single_layer(
                 layer,
             )
 
-            if joined_data is None:
-                joined_data = layer_data
+            if self.data is None:
+                self.data = layer_data
             else:
-                joined_data = gpd.GeoDataFrame(
-                    pd.concat([joined_data, layer_data], ignore_index=True)
+                self.data = gpd.GeoDataFrame(
+                    pd.concat([self.data, layer_data], ignore_index=True)
                 )
-    
-            del layer_data
 
-        return joined_data
+            del layer_data
 
