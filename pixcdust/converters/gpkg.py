@@ -60,10 +60,9 @@ class PixCNc2GpkgConverter(PixCConverter):
                     gdf[self._get_vars_wse_computation()[1]]
             # writing pixc layer in output file, geopackage
             gdf.to_file(self.path_out, layer=layer_name, driver="GPKG")
-            # tqdm.write(f"--File {path} processed")
 
 
-@dataclass      
+@dataclass
 class GpkgH3Projecter:
     path: str
     variable: str
