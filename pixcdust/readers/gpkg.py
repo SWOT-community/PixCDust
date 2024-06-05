@@ -9,6 +9,8 @@ import geopandas as gpd
 
 @dataclass
 class PixCGpkgReader:
+    """Class to read geopackage database from path
+    """
     path: str
     layers: list[str] = None
     area_of_interest: gpd.GeoDataFrame = None
@@ -18,9 +20,17 @@ class PixCGpkgReader:
         self.layers = fiona.listlayers(self.path)
 
     def read_single_layer(self, layername: str) -> gpd.GeoDataFrame:
+        """reads a single layer of geopackage database
+
+        Args:
+            layername (str): name of the database, from list accessible with self.layers
+
+        Returns:
+            gpd.GeoDataFrame: geodataframe containing data read from layer
+        """
         layer_data = gpd.read_file(
             self.path,
-            engine='pyogrio',
+            engine="pyogrio",
             use_arrow=True,
             layer=layername,
         )
@@ -35,10 +45,13 @@ class PixCGpkgReader:
 
         return layer_data
 
-    def read(
-        self,
-        layers: Optional[List[str]] | None = None
-            ):
+    def read(self, layers: Optional[List[str]] | None = None):
+        """reads all layers, or subset of layers, from geopackage database
+
+        Args:
+            layers (Optional[List[str]] | None, optional): \
+                list of layers accessible with self.layers. Defaults to None.
+        """
 
         self.data = None
 
@@ -59,4 +72,3 @@ class PixCGpkgReader:
                 )
 
             del layer_data
-
