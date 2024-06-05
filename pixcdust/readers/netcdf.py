@@ -1,7 +1,6 @@
 """This module reads SWOT Pixel Cloud Netcdfs"""
 
 from dataclasses import dataclass, field
-from typing import Tuple
 from datetime import datetime
 import numpy as np
 
@@ -11,11 +10,13 @@ import geopandas as gpd
 
 from pixcdust.converters.geo_utils import geoxarray_to_geodataframe
 
+
 @dataclass
 class PixCNcSimpleConstants:
     """Class setting defaults values in SWOT pixel cloud files \
         such as name of attributes and variables
     """
+    default_dim_name: str = "points"
     default_long_name: str = "longitude"
     default_lat_name: str = "latitude"
     default_cyc_num_name: str = 'cycle_number'
@@ -24,6 +25,7 @@ class PixCNcSimpleConstants:
     default_time_start_name: str = 'time_granule_start'
     default_time_format_filename: str = "%Y%m%dT%H%M%S"
     default_time_format_attrs: str = '%Y-%m-%dT%H:%M:%S.%fZ'
+    default_added_time_name = 'time'
 
 
 @dataclass
@@ -98,7 +100,7 @@ class PixCNcSimpleReader:
     def open_mfdataset(
         self,
         orbit_info: bool = False,
-        ):
+            ):
         """ reads one or multiple pixc files and stores\
             a nested xarray in self.data.
         In this case, variables that are not one-dimensional
@@ -136,24 +138,25 @@ class PixCNcSimpleReader:
             )
 
         if self.variables:
-            # TODO: check if variables in forbidden variables before loading
-            if orbit_info:
-                self.variables.extend(
-                    ['tile_num', 'cycle_num', 'pass_num', 'time']
+            # check if variables in forbidden variables before loading
+            if len(
+                set(self.variables).intersection(
+                    set(self.forbidden_variables)
                 )
+                    ) > 0:
+                raise IOError(
+                    f'variables from {self.forbidden_variables} \
+                        cannot be extracted'
+                )
+
+            if orbit_info:
+                self.variables.extend([
+                    self.cst.default_tile_num_name,
+                    self.cst.default_cyc_num_name,
+                    self.cst.default_pass_num_name,
+                    self.cst.default_added_time_name,
+                ])
             self.data = self.data[self.variables]
-            
-        # if reorder_from_sequence:
-        #     for var in reorder_from_sequence:
-        #         if var not in self.variables:
-        #             raise ValueError(
-        #                 f"Expected vars in reordering sequence \
-        #                     to be within data variables {self.variables} \
-        #                     received {var}"
-        #             )
-        #     self.__reorder_from_sequence(
-        #         reorder_from_sequence
-        #     )
 
     def __preprocess_types(self, ds) -> xr.Dataset:
         """preprocessing function changing types in pixc dataset
@@ -174,7 +177,7 @@ class PixCNcSimpleReader:
         )
 
         return ds
-    
+
     def __preprocess_types_and_add_orbit_info(self, ds) -> xr.Dataset:
         """preprocessing function adding orbit information in pixc dataset
 
@@ -185,7 +188,8 @@ class PixCNcSimpleReader:
             xarray.Dataset: dataset augmented with orbit\
                 information for each index
         """
-        ds[self.cst.default_long_name] = ds[self.cst.default_long_name].astype(np.float32, copy=False)
+        ds[self.cst.default_long_name] = \
+            ds[self.cst.default_long_name].astype(np.float32, copy=False)
 
         filename = ds.encoding['source']
 
@@ -194,10 +198,10 @@ class PixCNcSimpleReader:
                 filename
             )
 
-        ds['tile_num'] = tile_number
-        ds['pass_num'] = pass_number
-        ds['cycle_num'] = cycle_number
-        ds['time'] = dt_time_start
+        ds[self.cst.default_tile_num_name] = tile_number
+        ds[self.cst.default_pass_num_name] = pass_number
+        ds[self.cst.default_cyc_num_name] = cycle_number
+        ds[self.cst.default_added_time_name] = dt_time_start
 
         return ds
 
@@ -244,4 +248,3 @@ class PixCNcSimpleReader:
             lat_name=cst.default_lat_name,
             **kwargs,
         )
-
