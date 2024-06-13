@@ -63,11 +63,14 @@ class PixCConverter:
         return 'wse'
 
     @staticmethod
-    def _sort_input_files(files):
-        base_files = [os.path.basename(f) for f in files]
-        new_index = np.argsort(base_files)
-
-        return base_files[new_index]
+    def _sort_input_files(files: list[str]) -> list[str]:
+        """method sorting files in ascending order based on their names.
+        Warning this works with SWOT Pixel Cloud original file names only.
+        """
+        new_index = np.argsort(
+            [os.path.basename(f) for f in files]
+        )
+        return np.asarray(files)[new_index].tolist()
 
 
 @dataclass
