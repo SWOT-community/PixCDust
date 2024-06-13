@@ -2,6 +2,9 @@ from dataclasses import dataclass
 import operator
 from ast import literal_eval
 
+import os
+import numpy as np
+
 import geopandas as gpd
 
 from pixcdust.dggs import h3_tools
@@ -21,7 +24,7 @@ class PixCConverter:
     ):
 
         if isinstance(path_in, list):
-            self.path_in = path_in
+            self.path_in = self._sort_input_files(path_in)
         elif isinstance(path_in, str):
             self.path_in = [path_in]
         else:
@@ -58,6 +61,13 @@ class PixCConverter:
     @staticmethod
     def _get_name_wse_var() -> str:
         return 'wse'
+
+    @staticmethod
+    def _sort_input_files(files):
+        base_files = [os.path.basename(f) for f in files]
+        new_index = np.argsort(base_files)
+
+        return base_files[new_index]
 
 
 @dataclass
