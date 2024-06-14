@@ -1,6 +1,6 @@
-# SWOT Pixel Cloud Study
+# A Pinch of PixC Dust
 
-This python project centralizes librairies to facilitate local studies based on SWOT Pixel Cloud products.
+This python project centralizes librairies to facilitate local studies based on SWOT-HR Level-2 Pixel Cloud products.
 
 # Quick Start
 start by cloning  this package and installing the environment with  
