@@ -1,4 +1,4 @@
-# A Pinch of PixC Dust 🎩 🪄 🐇
+# 🎩 🪄 A Pinch of PixC Dust 🐇
 
 This python project centralizes librairies to facilitate local studies based on SWOT-HR Level-2 Pixel Cloud products.
 
