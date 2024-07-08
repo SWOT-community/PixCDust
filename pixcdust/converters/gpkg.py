@@ -84,7 +84,7 @@ class GpkgH3Projecter:
 
     def compute_layers(self):
         for layer in tqdm(self.database.layers, desc="Layers"):
-            gdf = self.database.get_layer(layer)
+            gdf = self.database.read_single_layer(layer)
             h3_gdf = self._compute_layer(gdf)
 
             layername_out = f"{layer}_{self.variable}_\

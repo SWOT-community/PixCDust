@@ -27,10 +27,14 @@ class PixCNc2ZarrConverter(PixCConverter):
     def database_from_nc(self):
         """function to create a database from a multiple netcdf PIXC files
         """
+        if self.area_of_interest:
+            raise NotImplementedError('The feature to extract data in area of interest\
+has not yet been implemented for zarr conversion, only Geopackage')
+
         if self.mode in ['o', 'overwrite'] and os.path.exists(self.path_out):
             shutil.rmtree(self.path_out)
 
-        with dask.distributed.LocalCluster(processes=False) as cluster, \
+        with dask.distributed.LocalCluster(processes=True) as cluster, \
                 dask.distributed.Client(cluster) as client:
 
             xr_ds = PixCNcSimpleReader(self.path_in, self.variables)
@@ -51,7 +55,7 @@ class PixCNc2ZarrConverter(PixCConverter):
             if not os.path.exists(self.path_out) and init:
 
                 partition_handler = zcollection.partitioning.Date(
-                    ('time', ),
+                    (xr_ds.cst.default_added_time_name, ),
                     's',
                 )
 
