@@ -51,7 +51,7 @@ has not yet been implemented for zarr conversion, only Geopackage')
                 list(zc_ds.dimensions.keys())[0]: self.__chunk_size
             }
 
-            init = True 
+            init = True
             if not os.path.exists(self.path_out) and init:
 
                 partition_handler = zcollection.partitioning.Date(

@@ -25,13 +25,13 @@ class PixCNc2GpkgConverter(PixCConverter):
             ncsimple = PixCNcSimpleReader(path, self.variables)
 
             # computing layer_name
-            _, dt_time_start, cycle_number, pass_number, tile_number = (
+            _, dt_time_start, cycle_number, pass_number, tile_number, swath_side = (
                 ncsimple.extract_info_from_nc_attrs(path)
             )
             time_start = dt_time_start.strftime('%Y%m%d')
 
             layer_name = f"{cycle_number}_{pass_number}_\
-{tile_number}_{time_start}"
+{tile_number}{swath_side}_{time_start}"
 
             # cheking if output file and layer already exist
             if os.path.exists(self.path_out) and self.mode == "w":

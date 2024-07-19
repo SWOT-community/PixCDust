@@ -40,6 +40,7 @@ class PixCNcSimpleConstants:
     default_cyc_num_name: str = 'cycle_number'
     default_pass_num_name: str = 'pass_number'
     default_tile_num_name: str = 'tile_number'
+    default_swath_side_name: str = 'swath_side'
     default_time_start_name: str = 'time_granule_start'
     default_time_format_filename: str = "%Y%m%dT%H%M%S"
     default_time_format_attrs: str = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -93,6 +94,7 @@ class PixCNcSimpleReader:
 
         with xr.open_dataset(filename, engine='netcdf4') as ds_glob:
             tile_number = np.uint16(ds_glob.attrs[cst.default_tile_num_name])
+            swath_side = ds_glob.attrs[cst.default_swath_side_name]
             pass_number = np.uint16(ds_glob.attrs[cst.default_pass_num_name])
             cycle_number = np.uint16(ds_glob.attrs[cst.default_cyc_num_name])
             time_granule_start = ds_glob.attrs[cst.default_time_start_name]
@@ -102,7 +104,7 @@ class PixCNcSimpleReader:
             ).replace(microsecond=0)
 
         return time_granule_start, dt_time_start, \
-            cycle_number, pass_number, tile_number
+            cycle_number, pass_number, tile_number, swath_side
 
     def open_dataset(self):
         """reads one pixc file and stores data in self.data
@@ -211,12 +213,13 @@ class PixCNcSimpleReader:
 
         filename = ds.encoding['source']
 
-        _, dt_time_start, cycle_number, pass_number, tile_number =\
+        _, dt_time_start, cycle_number, pass_number, tile_number, swath_side =\
             self.extract_info_from_nc_attrs(
                 filename
             )
 
         ds[self.cst.default_tile_num_name] = tile_number
+        ds[self.cst.default_swath_side_name] = swath_side
         ds[self.cst.default_pass_num_name] = pass_number
         ds[self.cst.default_cyc_num_name] = cycle_number
         ds[self.cst.default_added_time_name] = dt_time_start
