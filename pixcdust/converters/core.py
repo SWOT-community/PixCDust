@@ -7,7 +7,7 @@ import numpy as np
 
 import geopandas as gpd
 
-from pixcdust.dggs import h3_tools
+
 
 
 class PixCConverter:
@@ -78,6 +78,7 @@ class GeoLayerH3Projecter:
     """Class for adding H3 projections to databases
 
     """
+    from pixcdust.dggs import h3_tools
     data: gpd.GeoDataFrame
     variable: str
     resolution: int
@@ -104,6 +105,7 @@ class GeoLayerH3Projecter:
         _k_operator = 'operator'
         _k_to = 'threshold'
         # Test if conditions dict meets specifications
+        print(conditions)
         for k in conditions.keys():
             if k not in self.data.columns:
                 raise IOError(
@@ -125,6 +127,7 @@ class GeoLayerH3Projecter:
                             {operator.__dict__},\
                             found {conditions[k][_k_operator]} instead'
                     )
+            print(f"operator.{conditions[k][_k_operator]}")
             ope = literal_eval(f"operator.{conditions[k][_k_operator]}")
             self.data = self.data[
                 ope(

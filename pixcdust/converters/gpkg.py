@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import fiona
 import geopandas as gpd
 
-from pixcdust.converters.core import PixCConverter, GeoLayerH3Projecter
+from pixcdust.converters.core import PixCConverter
 from pixcdust.readers.netcdf import PixCNcSimpleReader
 from pixcdust.readers.zarr import PixCZarrReader
 from pixcdust.readers.gpkg import PixCGpkgReader
@@ -30,8 +30,9 @@ class PixCNc2GpkgConverter(PixCConverter):
             )
             time_start = dt_time_start.strftime('%Y%m%d')
 
-            layer_name = f"{cycle_number}_{pass_number}_\
-{tile_number}{swath_side}_{time_start}"
+            layer_name = f"{time_start}_{cycle_number}_\
+{pass_number}_{tile_number}{swath_side}"
+
 
             # cheking if output file and layer already exist
             if os.path.exists(self.path_out) and self.mode == "w":
@@ -64,6 +65,8 @@ class PixCNc2GpkgConverter(PixCConverter):
 
 @dataclass
 class GpkgH3Projecter:
+    from pixcdust.converters.core import GeoLayerH3Projecter
+    
     path: str
     variable: str
     h3_res: int
