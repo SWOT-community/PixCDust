@@ -10,7 +10,7 @@ import dask.utils
 
 
 from pixcdust.converters.core import PixCConverter
-from pixcdust.readers.netcdf import PixCNcSimpleReader
+from pixcdust.readers.netcdf import PixCNcSimpleReader, PixCNcSimpleConstants
 
 TIME_VARNAME = 'time'
 
@@ -23,13 +23,11 @@ class PixCNc2ZarrConverter(PixCConverter):
     __time_varname: str = TIME_VARNAME
     __fs = fsspec.filesystem("file")
     __chunk_size = dask.utils.parse_bytes('2MiB')
+    __cst = PixCNcSimpleConstants()
 
     def database_from_nc(self):
         """function to create a database from a multiple netcdf PIXC files
         """
-        if self.area_of_interest:
-            raise NotImplementedError('The feature to extract data in area of interest\
-has not yet been implemented for zarr conversion, only Geopackage')
 
         if self.mode in ['o', 'overwrite'] and os.path.exists(self.path_out):
             shutil.rmtree(self.path_out)
@@ -37,14 +35,18 @@ has not yet been implemented for zarr conversion, only Geopackage')
         with dask.distributed.LocalCluster(processes=True) as cluster, \
                 dask.distributed.Client(cluster) as client:
 
-            xr_ds = PixCNcSimpleReader(self.path_in, self.variables)
+            xr_ds = PixCNcSimpleReader(
+                self.path_in,
+                self.variables,
+                self.area_of_interest,
+            )
 
             xr_ds.open_mfdataset(
                 orbit_info=True,
             )
 
             zc_ds = zcollection.Dataset.from_xarray(
-                xr_ds.to_xarray(),
+                xr_ds.to_xarray().drop_vars(self.__cst.default_added_points_name),
                 )
             zc_ds.block_size_limit = self.__chunk_size
             zc_ds.chunks = {

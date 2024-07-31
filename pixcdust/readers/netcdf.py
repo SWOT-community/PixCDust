@@ -23,10 +23,9 @@ from datetime import datetime
 import numpy as np
 
 import xarray as xr
+import xvec
 import pandas as pd
 import geopandas as gpd
-
-from pixcdust.converters.geo_utils import geoxarray_to_geodataframe
 
 
 @dataclass
@@ -45,6 +44,7 @@ class PixCNcSimpleConstants:
     default_time_format_filename: str = "%Y%m%dT%H%M%S"
     default_time_format_attrs: str = '%Y-%m-%dT%H:%M:%S.%fZ'
     default_added_time_name = 'time'
+    default_added_points_name = 'points'
 
 
 @dataclass
@@ -59,7 +59,7 @@ class PixCNcSimpleReader:
 
     path: list[str] | str
     variables: list[str] = None
-
+    area_of_interest: gpd.GeoDataFrame = None
     trusted_group: str = "pixel_cloud"
     forbidden_variables: list[str] = field(
         default_factory=lambda: [
@@ -116,6 +116,10 @@ class PixCNcSimpleReader:
         )
         if self.variables:
             self.data = self.data[self.variables]
+        
+        if self.area_of_interest is not None:
+            self.__postprocess_points()        
+
 
     def open_mfdataset(
         self,
@@ -177,6 +181,34 @@ class PixCNcSimpleReader:
                     self.cst.default_added_time_name,
                 ])
             self.data = self.data[self.variables]
+            if self.area_of_interest is not None:
+                self.__postprocess_points()
+
+    def __postprocess_points(self):
+        """Adds a points coordinates containing shapely.Points(longitude, latitude)
+        Useful for compatibility with xvec package and geographic manipulation
+
+        """
+        geom = gpd.points_from_xy(
+            self.data[self.cst.default_long_name],
+            self.data[self.cst.default_lat_name],
+        )
+
+        self.data = self.data.assign_coords(
+            {self.cst.default_added_points_name: geom},
+        )
+
+        self.data = self.data.xvec.set_geom_indexes(
+            self.cst.default_added_points_name,
+            crs=4326,
+        )
+
+        if self.area_of_interest is not None:
+            self.data.xvec.query(
+                self.cst.default_added_points_name,
+                self.area_of_interest.geometry,
+            )
+
 
     def __preprocess_types(self, ds) -> xr.Dataset:
         """preprocessing function changing types in pixc dataset
@@ -246,26 +278,11 @@ class PixCNcSimpleReader:
 
     def to_geodataframe(
             self,
-            **kwargs
             ) -> gpd.GeoDataFrame:
-        """_summary_
-
-        Args:
-            crs (str | int, optional): Coordinate Reference System.\
-                Defaults to 4326.
-            area_of_interest (gpd.GeoDataFrame, optional): a geodataframe\
-                containing polygons of interest where data will be restricted.\
-                Defaults to None.
+        """
 
         Returns:
             gpd.GeoDataFrame: a geodataframe with information from file
         """
 
-        cst = PixCNcSimpleConstants()
-
-        return geoxarray_to_geodataframe(
-            self.to_xarray(),
-            long_name=cst.default_long_name,
-            lat_name=cst.default_lat_name,
-            **kwargs,
-        )
+        return self.data.xvec.to_geodataframe()
