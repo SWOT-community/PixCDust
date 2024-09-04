@@ -120,7 +120,6 @@ class PixCNcSimpleReader:
         if self.area_of_interest is not None:
             self.__postprocess_points()
 
-
     def open_mfdataset(
         self,
         orbit_info: bool = False,
@@ -208,7 +207,6 @@ class PixCNcSimpleReader:
                 self.cst.default_added_points_name,
                 self.area_of_interest.geometry,
             )
-
 
     def __preprocess_types(self, ds) -> xr.Dataset:
         """preprocessing function changing types in pixc dataset

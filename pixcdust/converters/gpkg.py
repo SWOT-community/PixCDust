@@ -44,7 +44,7 @@ class PixCNc2GpkgConverter(PixCConverter):
                     continue
             # converting data from xarray to geodataframe
             ncsimple.open_dataset()
-            gdf = ncsimple.xvec.to_geodataframe(
+            gdf = ncsimple.to_geodataframe(
             )
 
             if gdf.size == 0:
