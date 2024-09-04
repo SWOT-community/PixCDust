@@ -33,18 +33,19 @@ class PixCNcSimpleConstants:
     """Class setting defaults values in SWOT pixel cloud files \
         such as name of attributes and variables
     """
+
     default_dim_name: str = "points"
     default_long_name: str = "longitude"
     default_lat_name: str = "latitude"
-    default_cyc_num_name: str = 'cycle_number'
-    default_pass_num_name: str = 'pass_number'
-    default_tile_num_name: str = 'tile_number'
-    default_swath_side_name: str = 'swath_side'
-    default_time_start_name: str = 'time_granule_start'
+    default_cyc_num_name: str = "cycle_number"
+    default_pass_num_name: str = "pass_number"
+    default_tile_num_name: str = "tile_number"
+    default_swath_side_name: str = "swath_side"
+    default_time_start_name: str = "time_granule_start"
     default_time_format_filename: str = "%Y%m%dT%H%M%S"
-    default_time_format_attrs: str = '%Y-%m-%dT%H:%M:%S.%fZ'
-    default_added_time_name = 'time'
-    default_added_points_name = 'points'
+    default_time_format_attrs: str = "%Y-%m-%dT%H:%M:%S.%fZ"
+    default_added_time_name = "time"
+    default_added_points_name = "points"
 
 
 @dataclass
@@ -92,23 +93,27 @@ class PixCNcSimpleReader:
         """
         cst = PixCNcSimpleConstants()
 
-        with xr.open_dataset(filename, engine='netcdf4') as ds_glob:
+        with xr.open_dataset(filename, engine="netcdf4") as ds_glob:
             tile_number = np.uint16(ds_glob.attrs[cst.default_tile_num_name])
             swath_side = ds_glob.attrs[cst.default_swath_side_name]
             pass_number = np.uint16(ds_glob.attrs[cst.default_pass_num_name])
             cycle_number = np.uint16(ds_glob.attrs[cst.default_cyc_num_name])
             time_granule_start = ds_glob.attrs[cst.default_time_start_name]
             dt_time_start = datetime.strptime(
-                time_granule_start,
-                cst.default_time_format_attrs
+                time_granule_start, cst.default_time_format_attrs
             ).replace(microsecond=0)
 
-        return time_granule_start, dt_time_start, \
-            cycle_number, pass_number, tile_number, swath_side
+        return (
+            time_granule_start,
+            dt_time_start,
+            cycle_number,
+            pass_number,
+            tile_number,
+            swath_side,
+        )
 
     def open_dataset(self):
-        """reads one pixc file and stores data in self.data
-        """
+        """reads one pixc file and stores data in self.data"""
         self.data = xr.open_dataset(
             self.path,
             group=self.trusted_group,
@@ -122,7 +127,7 @@ class PixCNcSimpleReader:
     def open_mfdataset(
         self,
         orbit_info: bool = False,
-            ):
+    ):
         """ reads one or multiple pixc files and stores\
             a nested xarray in self.data.
         In this case, variables that are not one-dimensional
@@ -161,23 +166,21 @@ class PixCNcSimpleReader:
 
         if self.variables:
             # check if variables in forbidden variables before loading
-            if len(
-                set(self.variables).intersection(
-                    set(self.forbidden_variables)
-                )
-                    ) > 0:
+            if len(set(self.variables).intersection(set(self.forbidden_variables))) > 0:
                 raise IOError(
-                    f'variables from {self.forbidden_variables} \
-                        cannot be extracted'
+                    f"variables from {self.forbidden_variables} \
+                        cannot be extracted"
                 )
 
             if orbit_info:
-                self.variables.extend([
-                    self.cst.default_tile_num_name,
-                    self.cst.default_cyc_num_name,
-                    self.cst.default_pass_num_name,
-                    self.cst.default_added_time_name,
-                ])
+                self.variables.extend(
+                    [
+                        self.cst.default_tile_num_name,
+                        self.cst.default_cyc_num_name,
+                        self.cst.default_pass_num_name,
+                        self.cst.default_added_time_name,
+                    ]
+                )
             self.data = self.data[self.variables]
 
             self.__postprocess_points()
@@ -202,9 +205,11 @@ class PixCNcSimpleReader:
         )
 
         if self.area_of_interest is not None:
-            self.data.xvec.query(
+            self.data = self.data.xvec.query(
                 self.cst.default_added_points_name,
                 self.area_of_interest.geometry,
+                # predicate="within",
+                # unique=True,
             )
 
     def __preprocess_types(self, ds) -> xr.Dataset:
@@ -237,15 +242,15 @@ class PixCNcSimpleReader:
             xarray.Dataset: dataset augmented with orbit\
                 information for each index
         """
-        ds[self.cst.default_long_name] = \
-            ds[self.cst.default_long_name].astype(np.float32, copy=False)
+        ds[self.cst.default_long_name] = ds[self.cst.default_long_name].astype(
+            np.float32, copy=False
+        )
 
-        filename = ds.encoding['source']
+        filename = ds.encoding["source"]
 
-        _, dt_time_start, cycle_number, pass_number, tile_number, swath_side =\
-            self.extract_info_from_nc_attrs(
-                filename
-            )
+        _, dt_time_start, cycle_number, pass_number, tile_number, swath_side = (
+            self.extract_info_from_nc_attrs(filename)
+        )
 
         ds[self.cst.default_tile_num_name] = tile_number
         ds[self.cst.default_swath_side_name] = swath_side
@@ -274,14 +279,17 @@ class PixCNcSimpleReader:
         return self.data.to_dataframe()
 
     def to_geodataframe(
-            self,
-            ) -> gpd.GeoDataFrame:
+        self,
+    ) -> gpd.GeoDataFrame:
         """
 
         Returns:
             gpd.GeoDataFrame: a geodataframe with information from file
         """
 
-        return self.data.xvec.to_geodataframe(
-            geometry=self.cst.default_added_points_name
-        )
+        gdf = self.data.xvec.to_geodataframe()
+
+        if self.area_of_interest is not None:
+            gdf = gdf.overlay(self.area_of_interest, how="intersection")
+
+        return gdf
