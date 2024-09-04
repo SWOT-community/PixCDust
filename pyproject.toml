@@ -26,6 +26,7 @@ pyarrow = "^16.1.0"
 eodag = "^2.12.1"
 folium = "^0.16.0"
 branca = "^0.7.2"
+xvec = "^0.3.0"
 
 
 [tool.poetry.group.dev.dependencies]

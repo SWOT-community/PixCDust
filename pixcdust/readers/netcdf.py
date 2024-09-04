@@ -116,9 +116,9 @@ class PixCNcSimpleReader:
         )
         if self.variables:
             self.data = self.data[self.variables]
-        
+
         if self.area_of_interest is not None:
-            self.__postprocess_points()        
+            self.__postprocess_points()
 
 
     def open_mfdataset(
