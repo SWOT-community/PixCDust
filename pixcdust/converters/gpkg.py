@@ -33,7 +33,6 @@ class PixCNc2GpkgConverter(PixCConverter):
             layer_name = f"{time_start}_{cycle_number}_\
 {pass_number}_{tile_number}{swath_side}"
 
-
             # cheking if output file and layer already exist
             if os.path.exists(self.path_out) and self.mode == "w":
                 if layer_name in fiona.listlayers(self.path_out):

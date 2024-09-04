@@ -117,8 +117,7 @@ class PixCNcSimpleReader:
         if self.variables:
             self.data = self.data[self.variables]
 
-        if self.area_of_interest is not None:
-            self.__postprocess_points()
+        self.__postprocess_points()
 
     def open_mfdataset(
         self,
@@ -180,11 +179,11 @@ class PixCNcSimpleReader:
                     self.cst.default_added_time_name,
                 ])
             self.data = self.data[self.variables]
-            if self.area_of_interest is not None:
-                self.__postprocess_points()
+
+            self.__postprocess_points()
 
     def __postprocess_points(self):
-        """Adds a points coordinates containing shapely.Points(longitude, latitude)
+        """Adds a points coordinates containing shapely.Points (longitude, latitude)
         Useful for compatibility with xvec package and geographic manipulation
 
         """
@@ -283,4 +282,6 @@ class PixCNcSimpleReader:
             gpd.GeoDataFrame: a geodataframe with information from file
         """
 
-        return self.data.xvec.to_geodataframe()
+        return self.data.xvec.to_geodataframe(
+            geometry=self.cst.default_added_points_name
+        )
