@@ -8,8 +8,6 @@ import numpy as np
 import geopandas as gpd
 
 
-
-
 class PixCConverter:
     """missing docstring"""
 

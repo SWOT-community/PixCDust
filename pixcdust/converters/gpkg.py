@@ -22,7 +22,11 @@ class PixCNc2GpkgConverter(PixCConverter):
 
         """
         for path in tqdm(self.path_in):
-            ncsimple = PixCNcSimpleReader(path, self.variables)
+            ncsimple = PixCNcSimpleReader(
+                path,
+                self.variables,
+                area_of_interest=self.area_of_interest,
+            )
 
             # computing layer_name
             _, dt_time_start, cycle_number, pass_number, tile_number, swath_side = (
