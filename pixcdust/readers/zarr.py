@@ -88,7 +88,7 @@ class PixCZarrReader:
 
         return geoxarray_to_geodataframe(
             self.to_xarray(),
-            long_name=cst.default_long_name,
-            lat_name=cst.default_lat_name,
+            #long_name=cst.default_long_name,
+            #lat_name=cst.default_lat_name,
             **kwargs,
             )
