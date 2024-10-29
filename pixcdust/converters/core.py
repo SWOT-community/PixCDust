@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass
 import operator
 from ast import literal_eval
@@ -31,7 +32,7 @@ class PixCConverter:
             )
 
         self.path_out = path_out
-        self.variables = variables
+        self.variables = copy.copy(variables)
         self.area_of_interest = area_of_interest
         if mode in ["w", "o"]:
             self.mode = mode
