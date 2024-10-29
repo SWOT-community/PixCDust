@@ -203,7 +203,7 @@ class Downloader:
             self.search_results, outputs_prefix=self.path_download
         )
 
-        if downloaded_paths is None:
+        if not downloaded_paths:
             print(
                 f"No files downloaded! Verify API-KEY and/or \
 product search configuration. \
