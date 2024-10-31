@@ -20,6 +20,8 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Tuple, Optional
+
 import numpy as np
 
 import xarray as xr
@@ -59,8 +61,8 @@ class PixCNcSimpleReader:
     """
 
     path: list[str] | str
-    variables: list[str] = None
-    area_of_interest: gpd.GeoDataFrame = None
+    variables: Optional[list[str]] = None
+    area_of_interest: Optional[gpd.GeoDataFrame] = None
     trusted_group: str = "pixel_cloud"
     forbidden_variables: list[str] = field(
         default_factory=lambda: [
@@ -77,7 +79,7 @@ class PixCNcSimpleReader:
     cst = PixCNcSimpleConstants()
 
     @staticmethod
-    def extract_info_from_nc_attrs(filename: str):
+    def extract_info_from_nc_attrs(filename: str) -> Tuple[str, datetime, int, int, int, str]:
         """Extracts orbit information from global attributes\
             in SWOT pixel cloud netcdf
 
@@ -112,7 +114,7 @@ class PixCNcSimpleReader:
             swath_side,
         )
 
-    def open_dataset(self):
+    def open_dataset(self) -> None:
         """reads one pixc file and stores data in self.data"""
         self.data = xr.open_dataset(
             self.path,
@@ -127,7 +129,7 @@ class PixCNcSimpleReader:
     def open_mfdataset(
         self,
         orbit_info: bool = False,
-    ):
+    ) -> None:
         """ reads one or multiple pixc files and stores\
             a nested xarray in self.data.
         In this case, variables that are not one-dimensional
@@ -185,7 +187,7 @@ class PixCNcSimpleReader:
 
             self.__postprocess_points()
 
-    def __postprocess_points(self):
+    def __postprocess_points(self) -> None:
         """Adds a points coordinates containing shapely.Points (longitude, latitude)
         Useful for compatibility with xvec package and geographic manipulation
 
@@ -212,7 +214,7 @@ class PixCNcSimpleReader:
                 # unique=True,
             )
 
-    def __preprocess_types(self, ds) -> xr.Dataset:
+    def __preprocess_types(self, ds: xr.Dataset) -> xr.Dataset:
         """preprocessing function changing types in pixc dataset
 
         Args:
@@ -232,7 +234,7 @@ class PixCNcSimpleReader:
 
         return ds
 
-    def __preprocess_types_and_add_orbit_info(self, ds) -> xr.Dataset:
+    def __preprocess_types_and_add_orbit_info(self, ds: xr.Dataset) -> xr.Dataset:
         """preprocessing function adding orbit information in pixc dataset
 
         Args:

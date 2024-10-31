@@ -1,11 +1,13 @@
 import os
+from typing import Optional
+
 from tqdm import tqdm
 from dataclasses import dataclass
 
 import fiona
 import geopandas as gpd
 
-from pixcdust.converters.core import PixCConverter
+from pixcdust.converters.core import PixCConverter, GeoLayerH3Projecter
 from pixcdust.readers.netcdf import PixCNcSimpleReader
 from pixcdust.readers.zarr import PixCZarrReader
 from pixcdust.readers.gpkg import PixCGpkgReader
@@ -16,7 +18,7 @@ class PixCNc2GpkgConverter(PixCConverter):
 
     """
 
-    def database_from_nc(self):
+    def database_from_nc(self) -> None:
         """function to create a geopackage database from a single or\
             multiple netcdf PIXC files
 
@@ -67,17 +69,16 @@ class PixCNc2GpkgConverter(PixCConverter):
 
 @dataclass
 class GpkgH3Projecter:
-    from pixcdust.converters.core import GeoLayerH3Projecter
     
     path: str
     variable: str
     h3_res: int
-    conditions: dict = None
+    conditions: Optional[dict] = None
     h3_layer_pattern: str = '_h3'
-    path_out: str = None
-    database: PixCGpkgReader = None
+    path_out: Optional[str] = None
+    # database: PixCGpkgReader
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.database = PixCGpkgReader(self.path)
         self.database.layers = [
             layer for layer in fiona.listlayers(self.path)
@@ -87,7 +88,7 @@ class GpkgH3Projecter:
         if self.path_out is None:
             self.path_out = self.path
 
-    def compute_layers(self):
+    def compute_layers(self) -> None:
         for layer in tqdm(self.database.layers, desc="Layers"):
             gdf = self.database.read_single_layer(layer)
             h3_gdf = self._compute_layer(gdf)
@@ -99,7 +100,7 @@ class GpkgH3Projecter:
             # tqdm.write(layername_out)
             # lancer write avec le bon nom
 
-    def _compute_layer(self, gdf):
+    def _compute_layer(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         geolayer = GeoLayerH3Projecter(
             gdf,
             self.variable,
@@ -120,10 +121,10 @@ class PixCZarr2GpkgConverter:
     path: str
     data: gpd.GeoDataFrame = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.__collection = PixCZarrReader(self.path)
         self.__collection.read()
 
-    def convert(self, path_out: str):
+    def convert(self, path_out: str) -> None:
         self.data = self.__collection.to_geodataframe()
         self.data.to_file(path_out, driver="GPKG")

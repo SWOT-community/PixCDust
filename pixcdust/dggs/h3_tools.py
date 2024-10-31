@@ -22,13 +22,13 @@ import h3
 from shapely.geometry import Polygon
 
 
-def cell_to_shapely(cell):
+def cell_to_shapely(cell) -> Polygon:
     coords = h3.h3_to_geo_boundary(cell)
     flipped = tuple(coord[::-1] for coord in coords)
     return Polygon(flipped)
 
 
-def get_h3_res_name(res: int):
+def get_h3_res_name(res: int) -> str:
     return "h3_" + str(res).zfill(2)
 
 

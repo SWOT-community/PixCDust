@@ -30,12 +30,12 @@ class PixCGpkgReader:
     """Class to read geopackage database from path
     """
     path: str
-    layers: list[str] = None
+    # layers: list[str]
     area_of_interest: gpd.GeoDataFrame = None
     data: gpd.GeoDataFrame = None
 
-    def __post_init__(self):
-        self.layers = fiona.listlayers(self.path)
+    def __post_init__(self) -> None:
+        self.layers: list[str]  = fiona.listlayers(self.path)
 
     def read_single_layer(self, layername: str) -> gpd.GeoDataFrame:
         """reads a single layer of geopackage database
@@ -64,7 +64,7 @@ class PixCGpkgReader:
 
         return layer_data
 
-    def read(self, layers: Optional[List[str]] | None = None):
+    def read(self, layers: Optional[List[str]] | None = None) -> None:
         """reads all layers, or subset of layers, from geopackage database
 
         Args:

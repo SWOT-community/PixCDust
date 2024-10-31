@@ -16,12 +16,12 @@
 
 
 import os
-from typing import Optional, Union, Tuple
+from typing import Optional, Union, Tuple, List
 import datetime
 
 import geopandas as gpd
 
-from eodag import EODataAccessGateway
+from eodag import EODataAccessGateway, SearchResult
 from eodag import setup_logging
 
 HELP_MESSAGE = """
@@ -68,10 +68,10 @@ class Downloader:
     def __init__(
         self,
         collection_name: str,
-        geometry: Union[str, list, gpd.GeoDataFrame, None] = (None,),
-        dates: Optional[Tuple[datetime.date, datetime.date]] | None = (None,),
-        path_download: str = ("/tmp/hydroweb_next",),
-        verbose: Optional[int] = (0,),
+        geometry: Union[str, list[str], gpd.GeoDataFrame, None] = (None,),
+        dates: Optional[Tuple[datetime.date, datetime.date]] = None,
+        path_download: str = "/tmp/hydroweb_next",
+        verbose: Optional[int] = 0,
     ):
 
         self.collection_name = collection_name
@@ -81,7 +81,7 @@ class Downloader:
         self.verbose = verbose
 
         self.query_args = {}
-        self.search_results = []
+        self.search_results: List[SearchResult] = []
         self.dag = EODataAccessGateway()
 
         setup_logging(
@@ -98,7 +98,7 @@ class Downloader:
 
         # Default search criteria when iterating over collection pages
         default_search_criteria = {
-            "items_per_page": 2000,
+            "items_per_page": "2000",
             "provider": self.PROVIDER,
         }
 
@@ -114,7 +114,7 @@ class Downloader:
 
         self.query_args.update(default_search_criteria)
 
-    def _search(self, geom=None):
+    def _search(self, geom:Optional[str] = None) -> None:
         if geom is not None:
             self.query_args["geom"] = geom
 
@@ -165,7 +165,7 @@ class Downloader:
 
         return geom
 
-    def __check_collection_name(self):
+    def __check_collection_name(self) -> None:
 
         list_collections = [
             d['ID'] for d in self.dag.list_product_types(
@@ -180,7 +180,7 @@ class Downloader:
                 f"\nAvailable collections are: {list_collections}"
             ))
 
-    def search_download(self, tolerance: float = None):
+    def search_download(self, tolerance: Optional[float] = None) -> None:
         if isinstance(self.geometry, str) or self.geometry is None:
             # TODO implement case to explode multipolyong in string
             self._search(self.geometry)

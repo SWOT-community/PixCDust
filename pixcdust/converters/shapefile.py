@@ -9,7 +9,7 @@ class PixCNc2ShpConverter(PixCConverter):
     """Class for converting Pixel Cloud files to Shapefile database
 
     """
-    def database_from_nc(self):
+    def database_from_nc(self) -> None:
         """function to create a database from a single or multiple\
             netcdf PIXC files
         """

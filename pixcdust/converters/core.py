@@ -4,6 +4,8 @@ import operator
 from ast import literal_eval
 
 import os
+from typing import Optional, Union
+
 import numpy as np
 
 import geopandas as gpd
@@ -16,8 +18,8 @@ class PixCConverter:
         self,
         path_in: list[str] | str,
         path_out: str,
-        variables: list[str] = None,
-        area_of_interest: gpd.GeoDataFrame = None,
+        variables: Optional[list[str]] = None,
+        area_of_interest: Optional[gpd.GeoDataFrame] = None,
         mode: str = "w",
         compute_wse: bool = True,
     ):
@@ -49,7 +51,7 @@ class PixCConverter:
             for var in self._get_vars_wse_computation():
                 self.variables.append(var)
 
-    def database_from_nc(self):
+    def database_from_nc(self) -> None:
         """missing Docstring"""
         raise NotImplementedError
 
@@ -82,7 +84,7 @@ class GeoLayerH3Projecter:
     variable: str
     resolution: int
 
-    def filter_variable(self, conditions: dict):
+    def filter_variable(self, conditions: dict[str,dict[str, Union[str, float]]]) -> None:
         """filters from xarray dataset based 
         on operator and threshold on specific variables
 
@@ -135,7 +137,7 @@ class GeoLayerH3Projecter:
                 )
             ]
 
-    def compute_h3_layer(self):
+    def compute_h3_layer(self) -> None:
         self.data = h3_tools.gdf_to_h3_gdf(
             self.data,
             self.resolution,

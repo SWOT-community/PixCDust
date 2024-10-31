@@ -33,15 +33,15 @@ from pixcdust.converters.geo_utils import geoxarray_to_geodataframe
 @dataclass
 class PixCZarrReader:
     path: str
-    variables: list[str] = None
-    data: xr.Dataset = None
+    variables: Optional[list[str]] = None
+    data: Optional[xr.Dataset] = None
 
     def read(
         self,
         date_interval: Optional[
             Tuple[datetime.datetime, datetime.datetime]
             ] | None = None,
-            ):
+            ) -> None:
 
         collection: zcollection.Dataset = zcollection.open_collection(
             self.path,
@@ -60,7 +60,7 @@ class PixCZarrReader:
         else:
             self.data = collection.load()
 
-    def to_xarray(self):
+    def to_xarray(self) ->  xr.DataArray:
         if self.data is None:
             return xr.Dataset()
         return self.data.to_xarray()

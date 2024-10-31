@@ -25,7 +25,7 @@ class PixCNc2ZarrConverter(PixCConverter):
     __chunk_size = dask.utils.parse_bytes('2MiB')
     __cst = PixCNcSimpleConstants()
 
-    def database_from_nc(self):
+    def database_from_nc(self) -> None:
         """function to create a database from a multiple netcdf PIXC files
         """
 
