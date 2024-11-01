@@ -4,7 +4,7 @@ import geopandas as gpd
 
 def geoxarray_to_geodataframe(
     ds: xr.Dataset,
-        ) -> gpd.GeoDataFrame:
+        *args, **kwargs) -> gpd.GeoDataFrame:
     """converts an xarray.Dataset with points coordinates  into\
         a geopandas.GeodataFrame with xvec
 
@@ -16,4 +16,4 @@ def geoxarray_to_geodataframe(
         gpd.GeoDataFrame: a geodataframe with information from file
     """
 
-    return ds.xvec.to_geodataframe()
+    return ds.xvec.to_geodataframe(*args, **kwargs)
