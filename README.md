@@ -35,3 +35,20 @@ Here are some python script implementing the classes.
 ## 🔶 *Discrete Global Grid System (experimental)*
 I enjoy DDGS a lot. It is pretty great if you want to perform on-the-fly "rasterization", partitionning, comparing pixels over time or space, etc.  
 Currently only H3 is implemented.  
+
+## ✅ *Tests*
+You first need to configure the tests and download the tests data with init_tests.py. We recommend setting the following options:
+- INPUT_FOLDER is where the tests data will be downloaded (or are already available).
+- HYDROWEB_AUTH is your hydroweb.next API key. It is required to automatically download the tests data or run the downloaders tests.
+```
+python tests/init_tests.py -I INPUT_FOLDER -H HYDROWEB_AUTH
+```
+
+You then can run the onveerters tests:
+```
+pytest
+```
+You can also run all the tests including the downloaders tests with:
+```
+pytest --dl
+```
