@@ -24,15 +24,17 @@ def validate_conversion_to_nc(read_data, converted_vars, first_file):
 
 def validate_conversion(read_data, converted_vars, expected_data, is_longer):
     for var in converted_vars:
-        np.testing.assert_allclose(read_data[var][0:30], expected_data[var][0:30])
+        read_var = read_data[var].data
+        np.testing.assert_allclose(read_var[0:30], expected_data[var][0:30])
         last = len(expected_data[var])
-        np.testing.assert_allclose(read_data[var][last-30:last-1], expected_data[var][last-30:last-1])
+        np.testing.assert_allclose(read_var[last-30:last-1], expected_data[var][last-30:last-1])
         r = random.randrange(30,last)
-        np.testing.assert_allclose(read_data[var][r-30:r-1], expected_data[var][r-30:r-1])
+        np.testing.assert_allclose(read_var[r-30:r-1], expected_data[var][r-30:r-1])
+        print(read_var)
         if is_longer:
-            assert len(expected_data[var]) < len(read_data[var])
+            assert last < len(read_var)
         else:
-            assert len(expected_data[var]) == len(read_data[var])
+            assert last == len(read_var)
 
 def test_convert_zarr_full_area(input_files, first_file, tmp_folder):
     # Conversion
