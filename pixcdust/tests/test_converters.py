@@ -84,7 +84,7 @@ def test_convert_gpkg_and_zarr_limited_area(input_files,converted_lim_gpkg, firs
     # Validation
     gpkg_read = PixCGpkgReader(output_gpkg)
     gpkg_read.read()
-    zarr_read = PixCZarrReader(output_gpkg)
+    zarr_read = PixCZarrReader(output_zarr)
     zarr_read.read()
     validate_conversion(gpkg_read.data, converted_vars, zarr_read.data, False)
 
