@@ -4,8 +4,7 @@ from typing import List
 
 import pytest
 
-from pixcdust.tests.init_tests import JsonTestsSettings
-
+from pixcdust.tests.init_tests import JsonTestsSettings, init_hydroweb_env
 
 
 def pytest_addoption(parser):
@@ -48,6 +47,4 @@ def tmp_folder(tests_settings) -> Path:
 
 @pytest.fixture()
 def hydroweb_env(tests_settings) -> None:
-    apikey = tests_settings.hydroweb_auth
-    if apikey:
-        os.environ["EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY"] = apikey
+    init_hydroweb_env(tests_settings)

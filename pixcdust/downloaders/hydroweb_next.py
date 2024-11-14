@@ -98,7 +98,7 @@ class Downloader:
 
         # Default search criteria when iterating over collection pages
         default_search_criteria = {
-            "items_per_page": "2000",
+            "items_per_page": 2000,
             "provider": self.PROVIDER,
         }
 

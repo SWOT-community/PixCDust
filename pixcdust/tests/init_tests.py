@@ -52,6 +52,11 @@ class JsonTestsSettings:
     def _config_path(self) -> Path:
         return Path(__file__).parent.absolute()/self.CONFIG_FILE_NAME
 
+def init_hydroweb_env(test_settings):
+    apikey = test_settings.hydroweb_auth
+    if apikey:
+        os.environ["EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY"] = apikey
+
 #polygon = Polygon([(-0.945, 43.522),(-0.945, 43.537),(-0.823, 43.537),(-0.823 ,43.522)])
 #polygon = Polygon([(-1.50580, 43.39543),(-1.36597, 43.39543),(-1.36597, 43.56471),(-1.50580 ,43.56471),(-1.50580, 43.39543)])
 #geometry = gpd.GeoDataFrame(index=[0], crs='epsg:4326', geometry=[polygon])
@@ -62,7 +67,7 @@ def download_test_data(path_download: Path) -> None:
         datetime(2024,8,15),
     )
 
-    geometry = "POLYGON ((-1.50580 43.39543,-1.36597 43.39543,-1.36597 43.56471,-1.50580 43.56471,-1.50580 43.39543))"
+    geometry = "POLYGON((-1.50580 43.39543,-1.36597 43.39543,-1.36597 43.56471,-1.50580 43.56471,-1.50580 43.39543))"
     pixcdownloader = PixCDownloader(
         geometry,
         dates,
@@ -102,6 +107,8 @@ if __name__ == "__main__":
 
     settings.write()
     path_download = settings.input_folder #Path('/home/gbeaucha/pixcdust/test-data')
+
+    init_hydroweb_env(settings)
     if args.download is None:
         if not check_test_data(path_download):
             # config changed and the data is missing.
