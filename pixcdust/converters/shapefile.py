@@ -18,7 +18,7 @@ class PixCNc2ShpConverter(PixCConverter):
         except FileExistsError:
             pass
         for path in tqdm(self.path_in):
-            ncsimple = PixCNcSimpleReader(path, self.variables, area_of_interest=self.area_of_interest)
+            ncsimple = PixCNcSimpleReader(path, variables=self.variables, area_of_interest=self.area_of_interest)
 
             filename_out = os.path.splitext(os.path.basename(path))[0]
             path_out = os.path.join(

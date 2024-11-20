@@ -20,14 +20,18 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Tuple, Optional
+from pathlib import Path
+from typing import Tuple, Optional, Iterable
 
 import numpy as np
 
+import xvec # noqa  # pylint: disable=unused-import
+# xvec provide xvec accessor to xarray.
+
 import xarray as xr
-import xvec
-import pandas as pd
 import geopandas as gpd
+
+from pixcdust.readers.base_reader import BaseReader
 
 
 @dataclass
@@ -49,20 +53,13 @@ class PixCNcSimpleConstants:
     default_added_time_name = "time"
     default_added_points_name = "points"
 
-
 @dataclass
-class PixCNcSimpleReader:
-    """Class for reading SWOT Pixel cloud official format files reader
-    for most simple uses cases:
-    It only reads in the pixel_cloud group
-
-    Returns:
-        _type_: _description_
+class PixcNcFormatCfg:
+    """Class configuring how a SWOT pixel cloud files is expected to be structured.
     """
-
-    path: list[str] | str
-    variables: Optional[list[str]] = None
-    area_of_interest: Optional[gpd.GeoDataFrame] = None
+    constants: PixCNcSimpleConstants  =  field(
+        default_factory=lambda: PixCNcSimpleConstants()
+    )
     trusted_group: str = "pixel_cloud"
     forbidden_variables: list[str] = field(
         default_factory=lambda: [
@@ -75,8 +72,30 @@ class PixCNcSimpleReader:
             "interferogram",
         ]
     )
-    data: xr.Dataset = None
-    cst = PixCNcSimpleConstants()
+
+
+class PixCNcSimpleReader(BaseReader):
+    """Class for reading SWOT Pixel cloud official format files reader
+    for most simple uses cases:
+    It only reads in the pixel_cloud group
+
+    Returns:
+        _type_: _description_
+    """
+    MULTI_FILE_SUPPORT=True
+    def __init__(self,
+                 path: str | Iterable[str] | Path | Iterable[Path],
+                 variables: Optional[list[str]] = None,
+                 area_of_interest: Optional[gpd.GeoDataFrame] = None,
+                 format_cfg : Optional[PixcNcFormatCfg] = None
+                 ):
+        super().__init__(path, area_of_interest=area_of_interest, variables=variables)
+        if not format_cfg:
+            format_cfg = PixcNcFormatCfg()
+        self.forbidden_variables = format_cfg.forbidden_variables
+        self.trusted_group = format_cfg.trusted_group
+        self.cst = format_cfg.constants
+
 
     @staticmethod
     def extract_info_from_nc_attrs(filename: str) -> Tuple[str, datetime, int, int, int, str]:
@@ -114,6 +133,13 @@ class PixCNcSimpleReader:
             swath_side,
         )
 
+    def read(self, orbit_info: bool = False) -> None:
+        if self.multi_file_db:
+            return self.open_mfdataset(orbit_info)
+        else:
+            return self.open_dataset()
+
+
     def open_dataset(self) -> None:
         """reads one pixc file and stores data in self.data"""
         self.data = xr.open_dataset(
@@ -145,26 +171,19 @@ class PixCNcSimpleReader:
                 the orbit information in data. Defaults to False.
         """
 
-        if not orbit_info:
-            self.data = xr.open_mfdataset(
-                self.path,
-                group=self.trusted_group,
-                engine="netcdf4",
-                drop_variables=self.forbidden_variables,
-                combine="nested",
-                concat_dim="points",
-                preprocess=self.__preprocess_types,
-            )
+        if orbit_info:
+            preprocess = self.__preprocess_types_and_add_orbit_info
         else:
-            self.data = xr.open_mfdataset(
-                self.path,
-                group=self.trusted_group,
-                engine="netcdf4",
-                drop_variables=self.forbidden_variables,
-                combine="nested",
-                concat_dim="points",
-                preprocess=self.__preprocess_types_and_add_orbit_info,
-            )
+            preprocess = self.__preprocess_types
+        self.data = xr.open_mfdataset(
+            self.path,
+            group=self.trusted_group,
+            engine="netcdf4",
+            drop_variables=self.forbidden_variables,
+            combine="nested",
+            concat_dim="points",
+            preprocess=preprocess,
+        )
 
         if self.variables:
             # check if variables in forbidden variables before loading
@@ -261,37 +280,3 @@ class PixCNcSimpleReader:
         ds[self.cst.default_added_time_name] = dt_time_start
 
         return ds
-
-    def to_xarray(self) -> xr.Dataset:
-        """returning an xarray.Dataset from object
-        (this function exists for potential future compatibility)
-
-        Returns:
-            xr.Dataset: Dataset with information from file
-        """
-
-        return self.data
-
-    def to_dataframe(self) -> pd.DataFrame:
-        """returns a pandas.DataFrame from object
-
-        Returns:
-            pd.DataFrame: Dataframe with information from file
-        """
-        return self.data.to_dataframe()
-
-    def to_geodataframe(
-        self,
-    ) -> gpd.GeoDataFrame:
-        """
-
-        Returns:
-            gpd.GeoDataFrame: a geodataframe with information from file
-        """
-
-        gdf = self.data.xvec.to_geodataframe()
-
-        if self.area_of_interest is not None:
-            gdf = gdf.overlay(self.area_of_interest, how="intersection")
-
-        return gdf
