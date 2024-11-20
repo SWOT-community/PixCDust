@@ -43,7 +43,8 @@ def first_file(input_folder) -> Path:
 
 @pytest.fixture(scope="session")
 def tmp_folder(tests_settings) -> Path:
-    return  tests_settings.tmp_folder
+    tests_settings.tmp_folder.mkdir(exist_ok=True)
+    return tests_settings.tmp_folder
 
 @pytest.fixture()
 def hydroweb_env(tests_settings) -> None:
