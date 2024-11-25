@@ -10,6 +10,8 @@ import numpy as np
 
 import geopandas as gpd
 
+from pixcdust.readers.netcdf import sorted_by_date
+
 
 class PixCConverter:
     """missing docstring"""
@@ -68,10 +70,7 @@ class PixCConverter:
         """method sorting files in ascending order based on their names.
         Warning this works with SWOT Pixel Cloud original file names only.
         """
-        new_index = np.argsort(
-            [os.path.basename(f) for f in files]
-        )
-        return np.asarray(files)[new_index].tolist()
+        return sorted_by_date(files)
 
 
 @dataclass

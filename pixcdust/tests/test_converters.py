@@ -67,11 +67,19 @@ def converted_lim_gpkg(input_files, tmp_folder):
     return output_gpkg
 
 
-def test_convert_gpkg_and_zarr_limited_area(input_files,converted_lim_gpkg, first_file, tmp_folder):
+def test_convert_gpkg_and_zarr_limited_area(input_files, first_file, tmp_folder):
     # Conversion
-    output_gpkg = converted_lim_gpkg
     output_zarr = str(tmp_folder / "zarr_conv_test_lim")
     converted_vars = ['height', 'sig0', 'classification']
+    output_gpkg = str(tmp_folder / "gpkg_conv_test_lim")
+
+    PixCNc2GpkgConverter(
+            input_files,
+            output_gpkg,
+            variables=converted_vars,
+            area_of_interest=LIM_AREA_GEOM,
+            mode='o',
+    ).database_from_nc()
 
     PixCNc2ZarrConverter(
             input_files,

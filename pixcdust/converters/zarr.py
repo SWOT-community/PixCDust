@@ -76,7 +76,6 @@ class PixCNc2ZarrConverter(PixCConverter):
                     filesystem=self.__fs,
                     mode='w',
                     )
-
             self.collection.insert(
                 zc_ds,
                 merge_callable=zcollection.collection.merging.merge_time_series

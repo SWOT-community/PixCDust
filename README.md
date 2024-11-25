@@ -44,7 +44,7 @@ You first need to configure the tests and download the tests data with init_test
 python tests/init_tests.py -I INPUT_FOLDER -H HYDROWEB_AUTH
 ```
 
-You then can run the onveerters tests:
+You then can run the converters tests:
 ```
 pytest
 ```

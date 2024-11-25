@@ -17,10 +17,12 @@
 
 
 """This module reads SWOT Pixel Cloud Netcdfs"""
-
+import re
+import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Tuple, Optional
+from pathlib import Path, PurePath
+from typing import Tuple, Optional, Union, List, Iterable
 
 import numpy as np
 
@@ -50,6 +52,18 @@ class PixCNcSimpleConstants:
     default_added_points_name = "points"
 
 
+PIXC_DATE_RE=re.compile(r'_\d{8}T\d{6}_\d{8}T\d{6}_')
+
+def sorted_by_date(file_list: Iterable[Union[str, Path]]) -> List[Union[str, Path]]:
+    # sort the filenames by date as some converters need monotonic dates.
+    def file_name_to_date(file_name: Union[str, Path]):
+        date_founds = PIXC_DATE_RE.findall(str(file_name))
+        if date_founds:
+            return date_founds[-1]
+        return file_name
+
+    return sorted(file_list, key = file_name_to_date) # sort by date
+
 @dataclass
 class PixCNcSimpleReader:
     """Class for reading SWOT Pixel cloud official format files reader
@@ -60,7 +74,7 @@ class PixCNcSimpleReader:
         _type_: _description_
     """
 
-    path: list[str] | str
+    path: list[str] | str | Path
     variables: Optional[list[str]] = None
     area_of_interest: Optional[gpd.GeoDataFrame] = None
     trusted_group: str = "pixel_cloud"
@@ -77,6 +91,11 @@ class PixCNcSimpleReader:
     )
     data: xr.Dataset = None
     cst = PixCNcSimpleConstants()
+
+    def __post_init__(self):
+        # sort the filenames by date as some converters need monotonic dates.
+        if not isinstance(self.path, (str, PurePath)):
+            self.path = sorted_by_date(self.path)
 
     @staticmethod
     def extract_info_from_nc_attrs(filename: str) -> Tuple[str, datetime, int, int, int, str]:
@@ -205,7 +224,6 @@ class PixCNcSimpleReader:
             self.cst.default_added_points_name,
             crs=4326,
         )
-
         if self.area_of_interest is not None:
             self.data = self.data.xvec.query(
                 self.cst.default_added_points_name,
@@ -213,6 +231,9 @@ class PixCNcSimpleReader:
                 # predicate="within",
                 # unique=True,
             )
+            if self.cst.default_added_time_name in self.data :
+                self.data = self.data.sortby(self.cst.default_added_time_name)
+
 
     def __preprocess_types(self, ds: xr.Dataset) -> xr.Dataset:
         """preprocessing function changing types in pixc dataset
