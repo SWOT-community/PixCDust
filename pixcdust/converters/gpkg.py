@@ -26,7 +26,7 @@ class PixCNc2GpkgConverter(PixCConverter):
         for path in tqdm(self.path_in):
             ncsimple = PixCNcSimpleReader(
                 path,
-                self.variables,
+                variables= self.variables,
                 area_of_interest=self.area_of_interest,
             )
 

@@ -15,27 +15,48 @@
 #
 #
 
-
-from dataclasses import dataclass
-from typing import Optional, List
+from pathlib import Path
+from typing import Optional, List, Iterable
 from tqdm import tqdm
 
 import fiona
+import xarray as xr
 import pandas as pd
 import geopandas as gpd
 
+from pixcdust.readers.base_reader import BaseReader
 
-@dataclass
-class PixCGpkgReader:
+
+class PixCGpkgReader(BaseReader):
     """Class to read geopackage database from path
     """
-    path: str
-    # layers: list[str]
-    area_of_interest: gpd.GeoDataFrame = None
-    data: gpd.GeoDataFrame = None
 
-    def __post_init__(self) -> None:
+    def __init__(self,
+                 path: str | Iterable[str] | Path | Iterable[Path],
+                 area_of_interest: Optional[gpd.GeoDataFrame] = None
+                 ):
+        super().__init__(path, area_of_interest=area_of_interest)
+        self._gdf_data: Optional[gpd.GeoDataFrame] = None
         self.layers: list[str]  = fiona.listlayers(self.path)
+
+    @property
+    def data(self) ->  xr.Dataset:
+        return self._gdf_data.to_xarray()
+
+    @data.setter
+    def data(self, obj: xr.Dataset) -> None:
+        raise NotImplementedError("PixCGpkgReader internal data representation is a GeoDataFrame.")
+
+
+    def to_geodataframe(
+        self,
+    ) -> gpd.GeoDataFrame:
+        """
+
+        Returns:
+            gpd.GeoDataFrame: a geodataframe with information from file
+        """
+        return self._gdf_data
 
     def read_single_layer(self, layername: str) -> gpd.GeoDataFrame:
         """reads a single layer of geopackage database
@@ -64,7 +85,7 @@ class PixCGpkgReader:
 
         return layer_data
 
-    def read(self, layers: Optional[List[str]] | None = None) -> None:
+    def read(self, layers: Optional[List[str]] = None) -> None:
         """reads all layers, or subset of layers, from geopackage database
 
         Args:
@@ -72,7 +93,7 @@ class PixCGpkgReader:
                 list of layers accessible with self.layers. Defaults to None.
         """
 
-        self.data = None
+        self._gdf_data = None
 
         if layers is None:
             layers = self.layers
@@ -83,11 +104,11 @@ class PixCGpkgReader:
                 layer,
             )
 
-            if self.data is None:
-                self.data = layer_data
+            if self._gdf_data is None:
+                self._gdf_data = layer_data
             else:
-                self.data = gpd.GeoDataFrame(
-                    pd.concat([self.data, layer_data], ignore_index=True)
+                self._gdf_data = gpd.GeoDataFrame(
+                    pd.concat([self._gdf_data, layer_data], ignore_index=True)
                 )
 
             del layer_data

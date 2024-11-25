@@ -10,7 +10,7 @@ import numpy as np
 
 import geopandas as gpd
 
-from pixcdust.readers.netcdf import sorted_by_date
+from pixcdust.readers.base_reader import sorted_by_date
 
 
 class PixCConverter:
