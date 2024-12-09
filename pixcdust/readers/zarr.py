@@ -25,7 +25,7 @@ import zcollection
 from pixcdust.readers.base_reader import BaseReader
 
 
-class PixCZarrReader(BaseReader):
+class ZarrReader(BaseReader):
     """Zarr pixcdust database reader.
 
     Read a database from a Zarr database (folder).

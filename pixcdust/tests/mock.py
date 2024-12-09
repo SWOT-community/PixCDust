@@ -21,7 +21,7 @@ import numpy as np
 import xarray as xr
 import geopandas as gpd
 
-from pixcdust.readers.netcdf import PixCNcSimpleConstants
+from pixcdust.readers.netcdf import NcSimpleConstants
 
 
 def mock_xarray(length: int = 10000) -> xr.Dataset:
@@ -34,7 +34,7 @@ def mock_xarray(length: int = 10000) -> xr.Dataset:
     Returns:
         dataset with some typical variables
     """
-    cst = PixCNcSimpleConstants()
+    cst = NcSimpleConstants()
 
     # mocking dimension
     dims = (cst.default_dim_name,)

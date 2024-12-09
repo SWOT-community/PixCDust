@@ -29,7 +29,7 @@ import geopandas as gpd
 from pixcdust.readers.base_reader import BaseReader
 
 
-class PixCGpkgReader(BaseReader):
+class GpkgReader(BaseReader):
     """GeoPackage pixcdust database reader.
 
     Read a database from a GeoPackage file .

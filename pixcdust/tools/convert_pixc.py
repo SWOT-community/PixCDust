@@ -19,11 +19,10 @@ import click
 
 import geopandas as gpd
 
-from pixcdust.converters.core import PixCConverter
-from pixcdust.converters.gpkg import PixCNc2GpkgConverter
-from pixcdust.converters.zarr import PixCNc2ZarrConverter
-from pixcdust.converters.shapefile import PixCNc2ShpConverter
-
+from pixcdust.converters.gpkg import Nc2GpkgConverter
+from pixcdust.converters.zarr import Nc2ZarrConverter
+from pixcdust.converters.shapefile import Nc2ShpConverter
+from pixcdust.converters.core import Converter
 
 def paths_glob(ctx, param, paths):
     return list(paths)
@@ -105,19 +104,19 @@ def cli(
         gdf_aoi = None
 
     if format_out.lower() == 'gpkg':
-        pixc:PixCConverter = PixCNc2GpkgConverter(
+        pixc : Converter = Nc2GpkgConverter(
             paths_in,
             variables=list_vars,
             area_of_interest=gdf_aoi,
         )
     elif format_out.lower() == 'zarr':
-        pixc = PixCNc2ZarrConverter(
+        pixc = Nc2ZarrConverter(
             sorted(paths_in),
             variables=list_vars,
             area_of_interest=gdf_aoi,
         )
     elif format_out.lower() == 'shp':
-        pixc = PixCNc2ShpConverter(
+        pixc = Nc2ShpConverter(
             paths_in,
             variables=list_vars,
             area_of_interest=gdf_aoi,

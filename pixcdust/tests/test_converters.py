@@ -8,12 +8,12 @@ import pytest
 from shapely.geometry import Polygon
 import xarray as xr
 
-from pixcdust.converters.gpkg import PixCNc2GpkgConverter
-from pixcdust.converters.shapefile import PixCNc2ShpConverter
-from pixcdust.converters.zarr import PixCNc2ZarrConverter
-from pixcdust.readers import PixCGpkgReader
-from pixcdust.readers.zarr import PixCZarrReader
-from pixcdust.readers.netcdf import PixCNcSimpleReader
+from pixcdust.converters.gpkg import Nc2GpkgConverter
+from pixcdust.converters.shapefile import Nc2ShpConverter
+from pixcdust.converters.zarr import Nc2ZarrConverter
+from pixcdust.readers import GpkgReader
+from pixcdust.readers.zarr import ZarrReader
+from pixcdust.readers.netcdf import NcSimpleReader
 
 LIM_AREA_POL = Polygon(
         [(-1.50580, 43.39543), (-1.36597, 43.39543), (-1.36597, 43.56471), (-1.50580, 43.56471), (-1.50580, 43.39543)])
@@ -31,7 +31,7 @@ def validate_conversion_to_nc(read_data: xr.Dataset, converted_vars:List[str], f
     Raises:
         AssertionError: If the data are too different.
     """
-    ncsimple = PixCNcSimpleReader(str(first_file))
+    ncsimple = NcSimpleReader(str(first_file))
     ncsimple.open_dataset()
     validate_conversion(read_data, converted_vars, ncsimple.data,is_longer=True)
 
@@ -90,14 +90,14 @@ def test_convert_zarr_full_area(input_files, first_file, tmp_folder):
     # Conversion
     output =  str(tmp_folder / "zarr_conv_test_full")
     converted_vars = ['height', 'sig0', 'classification']
-    pixc = PixCNc2ZarrConverter(
+    pixc = Nc2ZarrConverter(
             input_files,
             variables=converted_vars,
     )
     pixc.database_from_nc(output, mode="o")
 
     # Validation
-    pixc_read = PixCZarrReader(output)
+    pixc_read = ZarrReader(output)
     pixc_read.read()
     validate_conversion_to_nc(pixc_read.data, converted_vars, first_file)
 
@@ -105,7 +105,7 @@ def test_convert_zarr_full_area(input_files, first_file, tmp_folder):
 def converted_lim_gpkg(input_files, tmp_folder):
     output_gpkg = str(tmp_folder / "gpkg_conv_test_lim")
     converted_vars = ['height', 'sig0', 'classification']
-    PixCNc2GpkgConverter(
+    Nc2GpkgConverter(
             input_files,
             variables=converted_vars,
             area_of_interest=LIM_AREA_GEOM,
@@ -124,16 +124,16 @@ def test_convert_gpkg_and_zarr_limited_area(input_files, first_file, tmp_folder,
     converted_vars = ['height', 'sig0', 'classification']
     output_gpkg = converted_lim_gpkg
 
-    PixCNc2ZarrConverter(
+    Nc2ZarrConverter(
             input_files,
             variables=converted_vars,
             area_of_interest=LIM_AREA_GEOM,
     ).database_from_nc(output_zarr, mode="o")
 
     # Validation
-    gpkg_read = PixCGpkgReader(output_gpkg)
+    gpkg_read = GpkgReader(output_gpkg)
     gpkg_read.read()
-    zarr_read = PixCZarrReader(output_zarr)
+    zarr_read = ZarrReader(output_zarr)
     zarr_read.read()
     validate_conversion(gpkg_read.data, converted_vars, zarr_read.data, is_longer=False, len_tol=2, sort_var="longitude")
 
@@ -145,7 +145,7 @@ def test_convert_shape_limited_area(input_files, first_file, tmp_folder):
     output =  str(tmp_folder / "shp_conv_test_full")
     converted_vars = ['height', 'sig0', 'classification']
 
-    pixc = PixCNc2ShpConverter(
+    pixc = Nc2ShpConverter(
             input_files,
             variables=converted_vars,
             area_of_interest=LIM_AREA_GEOM,

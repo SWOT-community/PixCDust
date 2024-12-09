@@ -10,7 +10,7 @@ from typing import Optional, Union, Iterable
 import geopandas as gpd
 
 
-class PixCConverter:
+class Converter:
     """Abstract class parent of pixcdust converters.
 
     They convert from official SWOT Pixel Cloud Netcdf to the supported format.
@@ -54,7 +54,7 @@ class PixCConverter:
         raise NotImplementedError
 
 
-class PixCConverterWSE(PixCConverter):
+class PixCConverterWSE(Converter):
     """Abstract class parent of pixcdust converters supporting water surface elevation computation.
 
     They convert from official SWOT Pixel Cloud Netcdf to the supported format.

@@ -5,11 +5,11 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from pixcdust.converters.core import PixCConverter
-from pixcdust.readers.netcdf import PixCNcSimpleReader
+from pixcdust.converters.core import Converter
+from pixcdust.readers.netcdf import NcSimpleReader
 
 
-class PixCNc2ShpConverter(PixCConverter):
+class Nc2ShpConverter(Converter):
     """Converter from official SWOT Pixel Cloud Netcdf to Shapefile database
 
     Attributes:
@@ -25,7 +25,7 @@ class PixCNc2ShpConverter(PixCConverter):
         except FileExistsError:
             pass
         for path in tqdm(self.path_in):
-            ncsimple = PixCNcSimpleReader(path,
+            ncsimple = NcSimpleReader(path,
                                           variables=self.variables,
                                           area_of_interest=self.area_of_interest)
 

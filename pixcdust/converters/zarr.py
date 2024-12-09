@@ -14,13 +14,13 @@ import dask
 import dask.utils
 
 
-from pixcdust.converters.core import PixCConverter
-from pixcdust.readers.netcdf import PixCNcSimpleReader, PixCNcSimpleConstants
+from pixcdust.converters.core import Converter
+from pixcdust.readers.netcdf import NcSimpleReader, NcSimpleConstants
 
 TIME_VARNAME = 'time'
 
 
-class PixCNc2ZarrConverter(PixCConverter):
+class Nc2ZarrConverter(Converter):
     """Converter from official SWOT Pixel Cloud Netcdf to Shapefile database
 
     Attributes:
@@ -51,7 +51,7 @@ class PixCNc2ZarrConverter(PixCConverter):
         self.__time_varname: str = TIME_VARNAME
         self.__fs = fsspec.filesystem("file")
         self.__chunk_size = dask.utils.parse_bytes('2MiB')
-        self.__cst = PixCNcSimpleConstants()
+        self.__cst = NcSimpleConstants()
 
     def database_from_nc(self, path_out: str | Path, mode: str = "w") -> None:
 
@@ -61,7 +61,7 @@ class PixCNc2ZarrConverter(PixCConverter):
         with dask.distributed.LocalCluster(processes=True) as cluster, \
                 dask.distributed.Client(cluster) as client:
 
-            xr_ds = PixCNcSimpleReader(
+            xr_ds = NcSimpleReader(
                 self.path_in,
                 self.variables,
                 self.area_of_interest,

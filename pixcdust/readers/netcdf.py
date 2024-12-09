@@ -34,7 +34,7 @@ from pixcdust.readers.base_reader import BaseReader
 
 
 @dataclass
-class PixCNcSimpleConstants:
+class NcSimpleConstants:
     """Class setting defaults values in SWOT pixel cloud files \
         such as name of attributes and variables
     """
@@ -54,11 +54,11 @@ class PixCNcSimpleConstants:
 
 
 @dataclass
-class PixcNcFormatCfg:
+class NcFormatCfg:
     """Class configuring how a SWOT pixel cloud files is expected to be structured.
     """
-    constants: PixCNcSimpleConstants  =  field(
-        default_factory=PixCNcSimpleConstants
+    constants: NcSimpleConstants  =  field(
+        default_factory=NcSimpleConstants
     )
     trusted_group: str = "pixel_cloud"
     forbidden_variables: list[str] = field(
@@ -74,7 +74,7 @@ class PixcNcFormatCfg:
     )
 
 
-class PixCNcSimpleReader(BaseReader):
+class NcSimpleReader(BaseReader):
     """Class for reading SWOT Pixel cloud official format files.
      It's for simple uses cases as it only reads the pixel_cloud group.
 
@@ -89,7 +89,7 @@ class PixCNcSimpleReader(BaseReader):
                  path: str | Iterable[str] | Path | Iterable[Path],
                  variables: Optional[list[str]] = None,
                  area_of_interest: Optional[gpd.GeoDataFrame] = None,
-                 format_cfg : Optional[PixcNcFormatCfg] = None
+                 format_cfg : Optional[NcFormatCfg] = None
                  ):
         """Netcdf pixcdust reader configuration.
 
@@ -102,7 +102,7 @@ class PixCNcSimpleReader(BaseReader):
         """
         super().__init__(path, area_of_interest=area_of_interest, variables=variables)
         if not format_cfg:
-            format_cfg = PixcNcFormatCfg()
+            format_cfg = NcFormatCfg()
         self.forbidden_variables = format_cfg.forbidden_variables
         self.trusted_group = format_cfg.trusted_group
         self.cst = format_cfg.constants
@@ -124,7 +124,7 @@ class PixCNcSimpleReader(BaseReader):
             pass number,
             tile number)
         """
-        cst = PixCNcSimpleConstants()
+        cst = NcSimpleConstants()
 
         with xr.open_dataset(filename, engine="netcdf4") as ds_glob:
             tile_number = np.uint16(ds_glob.attrs[cst.default_tile_num_name])

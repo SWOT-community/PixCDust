@@ -10,12 +10,12 @@ import fiona
 import geopandas as gpd
 
 from pixcdust.converters.core import PixCConverterWSE, GeoLayerH3Projecter
-from pixcdust.readers.netcdf import PixCNcSimpleReader
-from pixcdust.readers.zarr import PixCZarrReader
-from pixcdust.readers.gpkg import PixCGpkgReader
+from pixcdust.readers.netcdf import NcSimpleReader
+from pixcdust.readers.zarr import ZarrReader
+from pixcdust.readers.gpkg import GpkgReader
 
 
-class PixCNc2GpkgConverter(PixCConverterWSE):
+class Nc2GpkgConverter(PixCConverterWSE):
     """Converter from official SWOT Pixel Cloud Netcdf to a Geopackage database.
 
     Attributes:
@@ -31,7 +31,7 @@ class PixCNc2GpkgConverter(PixCConverterWSE):
         if compute_wse:
             self._append_wse_vars()
         for path in tqdm(self.path_in):
-            ncsimple = PixCNcSimpleReader(
+            ncsimple = NcSimpleReader(
                 path,
                 variables= self.variables,
                 area_of_interest=self.area_of_interest,
@@ -92,10 +92,10 @@ class GpkgH3Projecter:
     conditions: Optional[dict[str,dict[str, Union[str, float]]]] = None
     h3_layer_pattern: str = '_h3'
     path_out: Optional[str] = None
-    # database: PixCGpkgReader
+    # database: GpkgReader
 
     def __post_init__(self) -> None:
-        self.database = PixCGpkgReader(self.path)
+        self.database = GpkgReader(self.path)
         self.database.layers = [
             layer for layer in fiona.listlayers(self.path)
             if not layer.endswith(self.h3_layer_pattern)
@@ -139,7 +139,7 @@ class GpkgH3Projecter:
 
 
 @dataclass
-class PixCZarr2GpkgConverter:
+class Zarr2GpkgConverter:
     """Converter from Pixel Cloud zcollection to Geopackage database
     Attributes:
         path: Gpkg pixelcloud to convert.
@@ -148,7 +148,7 @@ class PixCZarr2GpkgConverter:
     data: gpd.GeoDataFrame = None
 
     def __post_init__(self) -> None:
-        self.__collection = PixCZarrReader(self.path)
+        self.__collection = ZarrReader(self.path)
         self.__collection.read()
 
     def convert(self, path_out: str) -> None:

@@ -18,8 +18,8 @@
 import unittest
 
 from pixcdust.tests.mock import mock_xarray
-from pixcdust.converters.gpkg import PixCNc2GpkgConverter
-from pixcdust.converters.zarr import PixCNc2ZarrConverter
+from pixcdust.converters.gpkg import Nc2GpkgConverter
+from pixcdust.converters.zarr import Nc2ZarrConverter
 
 
 class TestConverters(unittest.TestCase):
@@ -37,14 +37,14 @@ class TestConverters(unittest.TestCase):
     def test_convert_ds_to_gpkg(self):
         """function for testing the conversion to geopackage
         """
-        pixc = PixCNc2GpkgConverter(
+        pixc = Nc2GpkgConverter(
             "/tmp",
             variables=self.list_vars,
         )
         # forcing data with mock
         pixc.data = self.data
 
-        self.assertIsInstance(pixc, PixCNc2GpkgConverter)
+        self.assertIsInstance(pixc, Nc2GpkgConverter)
         # TODO: add relevant tests
 
     def test_convert_ds_to_zarr(self):
@@ -52,14 +52,14 @@ class TestConverters(unittest.TestCase):
         netcdf to zarr with zcollection
         """
 
-        pixc = PixCNc2ZarrConverter(
+        pixc = Nc2ZarrConverter(
             "/tmp",
             variables=self.list_vars,
         )
         # forcing data with mock
         pixc.data = self.data
 
-        self.assertIsInstance(pixc, PixCNc2ZarrConverter)
+        self.assertIsInstance(pixc, Nc2ZarrConverter)
         # TODO: add relevant tests
 
 

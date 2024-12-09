@@ -2,3 +2,4 @@
 poetry.lock
 conftest.json
 .idea
+pixc-env
