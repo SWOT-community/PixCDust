@@ -9,7 +9,7 @@ def test_hydroweb_next(hydroweb_env, input_folder, tmp_folder):
     download_test_data(dl_dir)
 
     dl_files = sorted(dl_dir.glob("**/*"))
-    all_input_files = sorted(dl_dir.glob("**/*"))
+    all_input_files = sorted(input_folder.glob("**/*"))
     assert len(dl_files) == len(all_input_files)
 
     for dl_f, input_f in zip(dl_files, all_input_files):
