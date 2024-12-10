@@ -3,10 +3,7 @@ from dataclasses import dataclass
 import operator
 from ast import literal_eval
 
-import os
 from typing import Optional, Union
-
-import numpy as np
 
 import geopandas as gpd
 

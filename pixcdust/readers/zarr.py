@@ -18,17 +18,13 @@
 
 """This module reads the zarr archives created by the converters"""
 
-from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import datetime
 import xarray as xr
-import geopandas as gpd
 import zcollection
 
 from pixcdust.readers.base_reader import BaseReader
-from pixcdust.readers.netcdf import PixCNcSimpleConstants
-from pixcdust.converters.geo_utils import geoxarray_to_geodataframe
 
 
 class PixCZarrReader(BaseReader):

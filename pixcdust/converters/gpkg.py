@@ -1,9 +1,8 @@
 import os
 from typing import Optional
-
-from tqdm import tqdm
 from dataclasses import dataclass
 
+from tqdm import tqdm
 import fiona
 import geopandas as gpd
 

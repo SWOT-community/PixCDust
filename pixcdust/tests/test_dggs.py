@@ -1,5 +1,5 @@
 from pixcdust.converters.core import GeoLayerH3Projecter
-from pixcdust.readers import PixCNcSimpleReader, PixCGpkgReader
+from pixcdust.readers import PixCGpkgReader
 from .test_converters import converted_lim_gpkg
 
 def test_h3_proj(converted_lim_gpkg):

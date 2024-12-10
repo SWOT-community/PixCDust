@@ -1,7 +1,6 @@
 import os
 import shutil
 import fsspec
-from typing import Tuple, List, Union
 
 import zcollection
 import zcollection.indexing

@@ -2,10 +2,10 @@ import argparse
 import os
 from typing import Union
 
-from pixcdust.downloaders.hydroweb_next import PixCDownloader
 from datetime import datetime
 import json
 from pathlib import Path
+from pixcdust.downloaders.hydroweb_next import PixCDownloader
 
 class JsonTestsSettings:
     CONFIG_FILE_NAME = 'conftest.json'
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
 
     settings.write()
-    path_download = settings.input_folder #Path('/home/gbeaucha/pixcdust/test-data')
+    path_download = settings.input_folder
 
     init_hydroweb_env(settings)
     if args.download is None:

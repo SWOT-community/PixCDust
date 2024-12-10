@@ -17,12 +17,10 @@
 
 
 """This module reads SWOT Pixel Cloud Netcdfs"""
-import re
-import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path, PurePath
-from typing import Tuple, Optional, Union, List, Iterable
+from pathlib import Path
+from typing import Tuple, Optional, Iterable
 
 import numpy as np
 
@@ -60,7 +58,7 @@ class PixcNcFormatCfg:
     """Class configuring how a SWOT pixel cloud files is expected to be structured.
     """
     constants: PixCNcSimpleConstants  =  field(
-        default_factory=lambda: PixCNcSimpleConstants()
+        default_factory=PixCNcSimpleConstants
     )
     trusted_group: str = "pixel_cloud"
     forbidden_variables: list[str] = field(
