@@ -122,7 +122,8 @@ class NcSimpleReader(BaseReader):
             time of granule start as datetime,
             cycle number,
             pass number,
-            tile number)
+            tile number,
+            swath size)
         """
         cst = NcSimpleConstants()
 
