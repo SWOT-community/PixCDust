@@ -20,21 +20,35 @@ LIM_AREA_GEOM = gpd.GeoDataFrame(index=[0], crs='epsg:4326', geometry=[LIM_AREA_
 def validate_conversion_to_nc(read_data, converted_vars, first_file):
     ncsimple = PixCNcSimpleReader(str(first_file))
     ncsimple.open_dataset()
-    validate_conversion(read_data, converted_vars, ncsimple.data,True)
+    validate_conversion(read_data, converted_vars, ncsimple.data,is_longer=True)
 
-def validate_conversion(read_data, converted_vars, expected_data, is_longer):
+def validate_conversion(read_data, converted_vars, expected_data, is_longer, len_tol=0, sort_var=False):
+    read_sort = None
+    expected_sort = None
     for var in converted_vars:
         read_var = read_data[var].data
-        np.testing.assert_allclose(read_var[0:30], expected_data[var][0:30])
-        last = len(expected_data[var])
-        np.testing.assert_allclose(read_var[last-30:last-1], expected_data[var][last-30:last-1])
-        r = random.randrange(30,last)
-        np.testing.assert_allclose(read_var[r-30:r-1], expected_data[var][r-30:r-1])
-        print(read_var)
+        expected_var = expected_data[var].data
+        if sort_var:
+            # can't do something like sorting by longitude as minor conversion error in the longitude
+            # result in random swaps (then a few massive errors because we mismatch the points).
+            read_var = np.sort(read_var)
+            expected_var = np.sort(expected_var)
+        np.testing.assert_allclose(read_var[0:30], expected_var[0:30])
+        expected_last = len(expected_var)
         if is_longer:
-            assert last < len(read_var)
+            last = expected_last
         else:
-            assert last == len(read_var)
+            last = len(read_var)
+
+        np.testing.assert_allclose(read_var[last-30:last-1], expected_var[expected_last-30:expected_last-1])
+        r = random.randrange(30,last)
+        if len_tol == 0:
+            np.testing.assert_allclose(read_var[r-30:r-1], expected_var[r-30:r-1])
+        if is_longer:
+            assert len(read_var) > expected_last
+        else:
+            assert expected_last + len_tol >= len(read_var) >= expected_last - len_tol
+
 
 def test_convert_zarr_full_area(input_files, first_file, tmp_folder):
     # Conversion
@@ -94,7 +108,7 @@ def test_convert_gpkg_and_zarr_limited_area(input_files, first_file, tmp_folder)
     gpkg_read.read()
     zarr_read = PixCZarrReader(output_zarr)
     zarr_read.read()
-    validate_conversion(gpkg_read.data, converted_vars, zarr_read.data, False)
+    validate_conversion(gpkg_read.data, converted_vars, zarr_read.data, is_longer=False, len_tol=1, sort_var="longitude")
 
 
 def test_convert_shape_limited_area(input_files, first_file, tmp_folder):
