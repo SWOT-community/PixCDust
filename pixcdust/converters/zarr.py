@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional, Iterable
 
 import fsspec
+from typing import Tuple, List, Union
 
 import geopandas as gpd
 import zcollection
