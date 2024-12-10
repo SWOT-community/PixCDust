@@ -1,7 +1,6 @@
 import copy
 from dataclasses import dataclass
 import operator
-from ast import literal_eval
 
 from typing import Optional, Union
 
@@ -75,7 +74,6 @@ class GeoLayerH3Projecter:
     """Class for adding H3 projections to databases
 
     """
-    from pixcdust.dggs import h3_tools
     data: gpd.GeoDataFrame
     variable: str
     resolution: int
@@ -125,7 +123,7 @@ class GeoLayerH3Projecter:
                             found {conditions[k][_k_operator]} instead'
                     )
             print(f"operator.{conditions[k][_k_operator]}")
-            ope = literal_eval(f"operator.{conditions[k][_k_operator]}")
+            ope = getattr(operator, conditions[k][_k_operator])
             self.data = self.data[
                 ope(
                     self.data[k],
@@ -134,6 +132,8 @@ class GeoLayerH3Projecter:
             ]
 
     def compute_h3_layer(self) -> None:
+        from pixcdust.dggs import h3_tools
+        print(type(self.data))
         self.data = h3_tools.gdf_to_h3_gdf(
             self.data,
             self.resolution,

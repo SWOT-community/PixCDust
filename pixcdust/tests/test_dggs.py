@@ -7,8 +7,7 @@ def test_h3_proj(converted_lim_gpkg):
     reader = PixCGpkgReader(converted_lim_gpkg)
 
     reader.read()
-    var = reader.data
+    var = reader.to_geodataframe()
     projector = GeoLayerH3Projecter(var, "sig0", 1200)
     projector.compute_h3_layer()
     print(projector.data)
-    assert(False)
