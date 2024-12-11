@@ -1,3 +1,5 @@
+"""Interface used by all pixcdust  Readers."""
+
 import re
 from typing import Optional, Iterable, Union, List
 from pathlib import Path
@@ -7,9 +9,19 @@ import geopandas as gpd
 
 
 PIXC_DATE_RE=re.compile(r'_\d{8}T\d{6}_\d{8}T\d{6}_')
+"""Regex patern used to extract the date (daystartThourstart_dayxendThoursend) 
+from a pixc file name.
+"""
 
 def sorted_by_date(file_list: Iterable[Union[str, Path]]) -> List[Union[str, Path]]:
-    # sort the filenames by date as some converters need monotonic dates.
+    """Sort the filenames by date as some converters need monotonic dates.
+    The date is parsed from the filename according to PIXC_DATE_RE.
+    Args:
+        file_list: List or iterable of pixc filenames.
+
+    Returns:
+        Sorted file_list.
+    """
     def file_name_to_date(file_name: Union[str, Path]):
         date_founds = PIXC_DATE_RE.findall(str(file_name))
         if date_founds:
@@ -19,7 +31,19 @@ def sorted_by_date(file_list: Iterable[Union[str, Path]]) -> List[Union[str, Pat
 
 
 class BaseReader:
-    """Class to read a database from path
+    """Abstract class parent of pixcdust database readers.
+
+    They read a database from a folder, file or list of files.
+    You can then request a xr.Dataset, pd.DataFrame or gpd.GeoDataFrame
+    view of the database.
+
+
+    Attributes:
+        path: Path or list of path to read.
+        variables: Optionally only read these variables.
+        area_of_interest: Optionally only read points in area_of_interest.
+        MULTI_FILE_SUPPORT: Static variable describing if the class support
+        opening a list of path.
     """
     MULTI_FILE_SUPPORT=False
     def __init__(self,
@@ -27,6 +51,13 @@ class BaseReader:
                  variables: Optional[list[str]] = None,
                  area_of_interest: Optional[gpd.GeoDataFrame] = None
                  ):
+        """Abstract class parent of pixcdust database readers.
+
+        Args:
+            path: Path or list of path to read.
+            variables: Optionally only read these variables.
+            area_of_interest: Optionally only read points in area_of_interest.
+        """
         if isinstance(path, str | Path):
             path = str(path)
             self.multi_file_db = False
@@ -44,6 +75,13 @@ class BaseReader:
 
     @property
     def data(self) ->  xr.Dataset:
+        """Return an xarray.Dataset view from the database read.
+
+        Equivalent to to_xarray.
+
+        Returns:
+            Dataset read
+        """
         return self._data
 
     @data.setter
@@ -51,20 +89,19 @@ class BaseReader:
         self._data = obj
 
     def to_xarray(self) -> xr.Dataset:
-        """returning an xarray.Dataset from object
-        (this function exists for potential future compatibility)
+        """Return an xarray.Dataset view from the database read.
 
         Returns:
-            xr.Dataset: Dataset with information from file
+            Dataset read.
         """
 
         return self.data
 
     def to_dataframe(self) -> pd.DataFrame:
-        """returns a pandas.DataFrame from object
+        """Return a pandas.DataFrame view from the database read.
 
         Returns:
-            pd.DataFrame: Dataframe with information from file
+            DataFrame read.
         """
         return self.data.to_dataframe()
 
@@ -72,10 +109,11 @@ class BaseReader:
     def to_geodataframe(
         self,
     ) -> gpd.GeoDataFrame:
-        """
+        """Convert the database read to a gpd.GeoDataFrame.
+        Only points in self.area_of_interest are included.
 
         Returns:
-            gpd.GeoDataFrame: a geodataframe with information from file
+            GeoDataFrame read.
         """
 
         gdf = self.data.xvec.to_geodataframe()
