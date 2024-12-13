@@ -22,12 +22,13 @@ from typing import Tuple, Optional, Iterable
 
 import numpy as np
 
-import xvec # noqa  # pylint: disable=unused-import
+import xvec  # noqa  # pylint: disable=unused-import
 # xvec provide xvec accessor to xarray.
 
 import xarray as xr
 import geopandas as gpd
 
+from pixcdust.dggs.dggs_converter import prepare_dataset_h3, prepare_dataset_healpix
 from pixcdust.readers.base_reader import BaseReader
 
 
@@ -82,7 +83,8 @@ class NcSimpleReader(BaseReader):
         area_of_interest: Optionally only read points in area_of_interest.
         MULTI_FILE_SUPPORT: True, this class can read multiple netcdf.
     """
-    MULTI_FILE_SUPPORT=True
+    MULTI_FILE_SUPPORT = True
+
     def __init__(self,
                  path: str | Iterable[str] | Path | Iterable[Path],
                  variables: Optional[list[str]] = None,
@@ -104,8 +106,6 @@ class NcSimpleReader(BaseReader):
         self.forbidden_variables = format_cfg.forbidden_variables
         self.trusted_group = format_cfg.trusted_group
         self.cst = format_cfg.constants
-
-
 
     @staticmethod
     def extract_info_from_nc_attrs(filename: str) -> Tuple[str, datetime, int, int, int, str]:
@@ -159,7 +159,6 @@ class NcSimpleReader(BaseReader):
             return self.open_mfdataset(orbit_info)
         return self.open_dataset()
 
-
     def open_dataset(self) -> None:
         """ Load the self.path file (need only one file in self.path).
         You can then access from data or with methods like
@@ -176,8 +175,8 @@ class NcSimpleReader(BaseReader):
         self.__postprocess_points()
 
     def open_mfdataset(
-        self,
-        orbit_info: bool = False,
+            self,
+            orbit_info: bool = False,
     ) -> None:
         """ Load self.path file(s) as a nested array.
         You can then access from data or with methods like
@@ -230,6 +229,43 @@ class NcSimpleReader(BaseReader):
 
             self.__postprocess_points()
 
+    def to_h3(self, variables: str | list[str], resolution: int = 8, method: str = 'linear') -> xr.Dataset:
+        """
+        Convert a Dataset with latitude and longitude coordinates into an H3-indexed grid.
+
+        Args:
+            variables: The variables you want to convert into the H3 grid.
+            resolution: The resolution of the H3 grid. Valid values are from 0 (coarse) to 15 (fine).
+            method: ('nearest', 'linear', 'cubic') The interpolation method used by`scippy.interpolate.griddata`.
+
+        Returns:
+            A new dataset with data variables interpolated onto the H3 grid
+        """
+        if isinstance(variables, str):
+            data = self.to_xarray()[[variables]]
+        else:
+            data = self.to_xarray()[variables]
+        return prepare_dataset_h3(data, resolution=resolution, method=method)
+
+    def to_healpix(self, variables: str | list[str], resolution: int = 8, nest=False, method: str = 'linear') -> xr.Dataset:
+        """
+        Convert a Dataset with latitude and longitude coordinates into an HEALPix-indexed grid.
+
+        Args:
+            variables: The variables you want to convert into the H3 grid.
+            resolution: The resolution of the HEALPix grid.
+            nest: If True, uses the nested HEALPix ordering scheme. Otherwise, uses the ring ordering scheme (default)
+            method: ('nearest', 'linear', 'cubic') The interpolation method used by`scippy.interpolate.griddata`.
+
+        Returns:
+            A new dataset with data variables interpolated onto the HEALPix grid.
+        """
+        if isinstance(variables, str):
+            data = self.to_xarray()[[variables]]
+        else:
+            data = self.to_xarray()[variables]
+        return prepare_dataset_healpix(data, resolution=resolution, nest=nest, method=method)
+
     def __postprocess_points(self) -> None:
         """Adds a points coordinates containing shapely.Points (longitude, latitude)
         Useful for compatibility with xvec package and geographic manipulation.
@@ -255,9 +291,8 @@ class NcSimpleReader(BaseReader):
                 # predicate="within",
                 # unique=True,
             )
-            if self.cst.default_added_time_name in self.data :
+            if self.cst.default_added_time_name in self.data:
                 self.data = self.data.sortby(self.cst.default_added_time_name)
-
 
     def __preprocess_types(self, ds: xr.Dataset) -> xr.Dataset:
         """Preprocessing function changing types in pixc dataset.
