@@ -44,7 +44,6 @@ coverage.*
 nosetests.xml
 coverage.xml
 *.cover
-*.log
 
 # Jupyter Notebook
 .ipynb_checkpoints/
@@ -55,6 +54,9 @@ coverage.xml
 
 # VS Code
 .vscode/
+
+# Logs
+*.log
 
 # Pytest
 .pytest_cache/
