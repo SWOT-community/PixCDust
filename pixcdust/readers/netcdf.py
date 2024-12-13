@@ -16,7 +16,7 @@
 #
 
 
-"""This module reads SWOT Pixel Cloud Netcdfs"""
+"""Pre-conversion SWOT Pixel Cloud Netcdf reader."""
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -75,12 +75,14 @@ class PixcNcFormatCfg:
 
 
 class PixCNcSimpleReader(BaseReader):
-    """Class for reading SWOT Pixel cloud official format files reader
-    for most simple uses cases:
-    It only reads in the pixel_cloud group
+    """Class for reading SWOT Pixel cloud official format files.
+     It's for simple uses cases as it only reads the pixel_cloud group.
 
-    Returns:
-        _type_: _description_
+    Attributes:
+        path: Path or list of path to read.
+        variables: Optionally only read these variables.
+        area_of_interest: Optionally only read points in area_of_interest.
+        MULTI_FILE_SUPPORT: True, this class can read multiple netcdf.
     """
     MULTI_FILE_SUPPORT=True
     def __init__(self,
@@ -89,6 +91,15 @@ class PixCNcSimpleReader(BaseReader):
                  area_of_interest: Optional[gpd.GeoDataFrame] = None,
                  format_cfg : Optional[PixcNcFormatCfg] = None
                  ):
+        """Netcdf pixcdust reader configuration.
+
+        Args:
+            path: Path or list of path of the file(s) to read.
+            variables: Optionally only read these variables.
+            area_of_interest: Optionally only read points in area_of_interest.
+            format_cfg: Optional. Config describing the netcdf structure.
+                Default to current SWOT Pixel Cloud.
+        """
         super().__init__(path, area_of_interest=area_of_interest, variables=variables)
         if not format_cfg:
             format_cfg = PixcNcFormatCfg()
@@ -101,17 +112,17 @@ class PixCNcSimpleReader(BaseReader):
     @staticmethod
     def extract_info_from_nc_attrs(filename: str) -> Tuple[str, datetime, int, int, int, str]:
         """Extracts orbit information from global attributes\
-            in SWOT pixel cloud netcdf
+            in a SWOT pixel cloud netcdf.
 
         Args:
-            filename (str): path of SWOT PIXC Netcdf file
+            filename: path of SWOT PIXC Netcdf file
 
         Returns:
-            str: time of granule start
-            datetime.datetime: time of granule start
-            int: cycle number
-            int: pass number
-            int: tile number
+            (time of granule start as string,
+            time of granule start as datetime,
+            cycle number,
+            pass number,
+            tile number)
         """
         cst = PixCNcSimpleConstants()
 
@@ -135,14 +146,26 @@ class PixCNcSimpleReader(BaseReader):
         )
 
     def read(self, orbit_info: bool = False) -> None:
+        """ Load self.path file(s).
+        You can then access from data or with methods like
+        to_xarray, to_dataframe or to_geodataframe.
+
+        See self.open_mfdataset for more details on how multiple files are merged.
+
+        Args:
+            orbit_info: Option to extract the orbit information.
+                Only used if multiple files are read.
+        """
         if self.multi_file_db:
             return self.open_mfdataset(orbit_info)
-        else:
-            return self.open_dataset()
+        return self.open_dataset()
 
 
     def open_dataset(self) -> None:
-        """reads one pixc file and stores data in self.data"""
+        """ Load the self.path file (need only one file in self.path).
+        You can then access from data or with methods like
+        to_xarray, to_dataframe or to_geodataframe.
+        """
         self.data = xr.open_dataset(
             self.path,
             group=self.trusted_group,
@@ -157,9 +180,11 @@ class PixCNcSimpleReader(BaseReader):
         self,
         orbit_info: bool = False,
     ) -> None:
-        """ reads one or multiple pixc files and stores\
-            a nested xarray in self.data.
-        In this case, variables that are not one-dimensional
+        """ Load self.path file(s) as a nested array.
+        You can then access from data or with methods like
+        to_xarray, to_dataframe or to_geodataframe.
+
+        Variables that are not one-dimensional
         along `points` dimension are not allowed and will be dropped:
             - 'pixc_line_qual',
             - 'pixc_line_to_tvp',
@@ -168,8 +193,7 @@ class PixCNcSimpleReader(BaseReader):
 
 
         Args:
-            orbit_info (bool, optional): option to extract\
-                the orbit information in data. Defaults to False.
+            orbit_info: option to extract the orbit information.
         """
 
         if orbit_info:
@@ -209,7 +233,7 @@ class PixCNcSimpleReader(BaseReader):
 
     def __postprocess_points(self) -> None:
         """Adds a points coordinates containing shapely.Points (longitude, latitude)
-        Useful for compatibility with xvec package and geographic manipulation
+        Useful for compatibility with xvec package and geographic manipulation.
 
         """
         geom = gpd.points_from_xy(
@@ -237,13 +261,15 @@ class PixCNcSimpleReader(BaseReader):
 
 
     def __preprocess_types(self, ds: xr.Dataset) -> xr.Dataset:
-        """preprocessing function changing types in pixc dataset
+        """Preprocessing function changing types in pixc dataset.
+
+         It cast the lon and lat to float32.
 
         Args:
-            ds (xarray.Dataset): pixc dataset read by xarray.open_dataset
+            ds: pixc dataset read by xarray.open_dataset to preprocess
 
         Returns:
-            xarray.Dataset: dataset with enhanced types
+            dataset with cast types
         """
         ds[self.cst.default_long_name] = ds[self.cst.default_long_name].astype(
             np.float32,
@@ -257,18 +283,17 @@ class PixCNcSimpleReader(BaseReader):
         return ds
 
     def __preprocess_types_and_add_orbit_info(self, ds: xr.Dataset) -> xr.Dataset:
-        """preprocessing function adding orbit information in pixc dataset
+        """Preprocessing function adding orbit information in pixc dataset.
+
+         It cast the lon and lat to float32.
 
         Args:
-            ds (xarray.Dataset): pixc dataset read by xarray.open_dataset
+            ds: pixc dataset read by xarray.open_dataset to preprocess
 
         Returns:
-            xarray.Dataset: dataset augmented with orbit\
-                information for each index
+            dataset augmented with orbit information for each index and with cast types
         """
-        ds[self.cst.default_long_name] = ds[self.cst.default_long_name].astype(
-            np.float32, copy=False
-        )
+        ds = self.__preprocess_types(ds)
 
         filename = ds.encoding["source"]
 

@@ -15,6 +15,9 @@
 #
 #
 
+"""Readers for SWOT Pixel Cloud.
+They support the Netcdf official format and converted Zarr or Geopackage database.
+"""
 
 from pixcdust.readers.netcdf import PixCNcSimpleReader
 from pixcdust.readers.gpkg import PixCGpkgReader

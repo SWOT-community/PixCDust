@@ -15,8 +15,10 @@
 #
 #
 
+"""Converted Pixcdust GeoPackage Reader."""
+
 from pathlib import Path
-from typing import Optional, List, Iterable
+from typing import Optional, List
 from tqdm import tqdm
 
 import fiona
@@ -28,13 +30,30 @@ from pixcdust.readers.base_reader import BaseReader
 
 
 class PixCGpkgReader(BaseReader):
-    """Class to read geopackage database from path
+    """GeoPackage pixcdust database reader.
+
+    Read a database from a GeoPackage file .
+    You can then request a xr.Dataset, pd.DataFrame or gpd.GeoDataFrame
+    view of the database.
+
+    Attributes:
+        path: Path to read.
+        variables: Not supported.
+        area_of_interest: Optionally only read points in area_of_interest.
+        MULTI_FILE_SUPPORT: False, only support one file.
     """
 
     def __init__(self,
-                 path: str | Iterable[str] | Path | Iterable[Path],
+                 path: str | Path,
                  area_of_interest: Optional[gpd.GeoDataFrame] = None
                  ):
+        """Gpkg pixcdust database reader configuration.
+        Read the list of layers from path.
+
+        Args:
+            path: Path of the file to read.
+            area_of_interest: Optionally only read points in area_of_interest.
+        """
         super().__init__(path, area_of_interest=area_of_interest)
         self._gdf_data: Optional[gpd.GeoDataFrame] = None
         self.layers: list[str]  = fiona.listlayers(self.path)
@@ -51,28 +70,25 @@ class PixCGpkgReader(BaseReader):
     def to_geodataframe(
         self,
     ) -> gpd.GeoDataFrame:
-        """
-
-        Returns:
-            gpd.GeoDataFrame: a geodataframe with information from file
-        """
         return self._gdf_data
 
-    def read_single_layer(self, layername: str) -> gpd.GeoDataFrame:
-        """reads a single layer of geopackage database
+    def read_single_layer(self, layer: str) -> gpd.GeoDataFrame:
+        """Read and return a single layer of geopackage database.
+
+        Don't load the read data into the class (can't be then converted by the reader).
+        Use read for more advanced usage.
 
         Args:
-            layername (str): name of the database, 
-            from list accessible with self.layers
+            layer : name of the geodataframe layer to read. Must be in self.layers
 
         Returns:
-            gpd.GeoDataFrame: geodataframe containing data read from layer
+            Geodataframe containing data read from layer
         """
         layer_data = gpd.read_file(
             self.path,
             engine="pyogrio",
             use_arrow=True,
-            layer=layername,
+            layer=layer,
         )
 
         if self.area_of_interest is not None:
@@ -86,11 +102,12 @@ class PixCGpkgReader(BaseReader):
         return layer_data
 
     def read(self, layers: Optional[List[str]] = None) -> None:
-        """reads all layers, or subset of layers, from geopackage database
+        """Load all layers, or subset of layers, from geopackage database.
+        You can then access from data or with methods like
+        to_xarray, to_dataframe or to_geodataframe.
 
         Args:
-            layers (Optional[List[str]] | None, optional): \
-                list of layers accessible with self.layers. Defaults to None.
+            layers: Optional list of layers to load. Default to all.
         """
 
         self._gdf_data = None

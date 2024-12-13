@@ -14,9 +14,7 @@
 # limitations under the License.
 #
 #
-
-
-"""This module reads the zarr archives created by the converters"""
+"""Converted Pixcdust zarr database Reader."""
 
 from typing import Optional, Tuple
 
@@ -28,6 +26,18 @@ from pixcdust.readers.base_reader import BaseReader
 
 
 class PixCZarrReader(BaseReader):
+    """Zarr pixcdust database reader.
+
+    Read a database from a Zarr database (folder).
+    You can then request a xr.Dataset, pd.DataFrame or gpd.GeoDataFrame
+    view of the database.
+
+    Attributes:
+        path: Path to read.
+        variables: Optionally only read these variables.
+        area_of_interest: Optionally only read points in area_of_interest.
+        MULTI_FILE_SUPPORT: False, only support one file.
+    """
 
 
     def read(
@@ -36,6 +46,14 @@ class PixCZarrReader(BaseReader):
             Tuple[datetime.datetime, datetime.datetime]
             ] | None = None,
             ) -> None:
+        """Load a zarr database.
+        You can then access from data or with methods like
+        to_xarray, to_dataframe or to_geodataframe.
+
+        Args:
+            date_interval: Optional date filter on the database read.
+                Only load data dated within the interval.
+        """
 
         collection = zcollection.open_collection(
             self.path,

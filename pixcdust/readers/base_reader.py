@@ -1,4 +1,4 @@
-"""Interface used by all pixcdust  Readers."""
+"""Interface used by all Pixcdust Readers."""
 
 import re
 from typing import Optional, Iterable, Union, List
@@ -37,13 +37,11 @@ class BaseReader:
     You can then request a xr.Dataset, pd.DataFrame or gpd.GeoDataFrame
     view of the database.
 
-
     Attributes:
         path: Path or list of path to read.
         variables: Optionally only read these variables.
         area_of_interest: Optionally only read points in area_of_interest.
-        MULTI_FILE_SUPPORT: Static variable describing if the class support
-        opening a list of path.
+        MULTI_FILE_SUPPORT: Static variable describing if the class support opening a list of path.
     """
     MULTI_FILE_SUPPORT=False
     def __init__(self,
@@ -51,7 +49,7 @@ class BaseReader:
                  variables: Optional[list[str]] = None,
                  area_of_interest: Optional[gpd.GeoDataFrame] = None
                  ):
-        """Abstract class parent of pixcdust database readers.
+        """Basic pixcdust database reader configuration.
 
         Args:
             path: Path or list of path to read.
@@ -75,7 +73,7 @@ class BaseReader:
 
     @property
     def data(self) ->  xr.Dataset:
-        """Return an xarray.Dataset view from the database read.
+        """Return an xarray.Dataset view from the database loaded.
 
         Equivalent to to_xarray.
 
@@ -89,7 +87,7 @@ class BaseReader:
         self._data = obj
 
     def to_xarray(self) -> xr.Dataset:
-        """Return an xarray.Dataset view from the database read.
+        """Return an xarray.Dataset view from the database loaded.
 
         Returns:
             Dataset read.
@@ -98,7 +96,7 @@ class BaseReader:
         return self.data
 
     def to_dataframe(self) -> pd.DataFrame:
-        """Return a pandas.DataFrame view from the database read.
+        """Return a pandas.DataFrame view from the database loaded.
 
         Returns:
             DataFrame read.
