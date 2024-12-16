@@ -23,8 +23,6 @@ def validate_conversion_to_nc(read_data, converted_vars, first_file):
     validate_conversion(read_data, converted_vars, ncsimple.data,is_longer=True)
 
 def validate_conversion(read_data, converted_vars, expected_data, is_longer, len_tol=0, sort_var=False):
-    read_sort = None
-    expected_sort = None
     for var in converted_vars:
         read_var = read_data[var].data
         expected_var = expected_data[var].data
@@ -56,11 +54,9 @@ def test_convert_zarr_full_area(input_files, first_file, tmp_folder):
     converted_vars = ['height', 'sig0', 'classification']
     pixc = PixCNc2ZarrConverter(
             input_files,
-            output,
             variables=converted_vars,
-            mode='o',
     )
-    pixc.database_from_nc()
+    pixc.database_from_nc(output, mode="o")
 
     # Validation
     pixc_read = PixCZarrReader(output)
@@ -73,35 +69,23 @@ def converted_lim_gpkg(input_files, tmp_folder):
     converted_vars = ['height', 'sig0', 'classification']
     PixCNc2GpkgConverter(
             input_files,
-            output_gpkg,
             variables=converted_vars,
             area_of_interest=LIM_AREA_GEOM,
-            mode='o',
-    ).database_from_nc()
+    ).database_from_nc(output_gpkg, mode="o")
     return output_gpkg
 
 
-def test_convert_gpkg_and_zarr_limited_area(input_files, first_file, tmp_folder):
+def test_convert_gpkg_and_zarr_limited_area(input_files, first_file, tmp_folder, converted_lim_gpkg):
     # Conversion
     output_zarr = str(tmp_folder / "zarr_conv_test_lim")
     converted_vars = ['height', 'sig0', 'classification']
-    output_gpkg = str(tmp_folder / "gpkg_conv_test_lim")
-
-    PixCNc2GpkgConverter(
-            input_files,
-            output_gpkg,
-            variables=converted_vars,
-            area_of_interest=LIM_AREA_GEOM,
-            mode='o',
-    ).database_from_nc()
+    output_gpkg = converted_lim_gpkg
 
     PixCNc2ZarrConverter(
             input_files,
-            output_zarr,
             variables=converted_vars,
             area_of_interest=LIM_AREA_GEOM,
-            mode='o',
-    ).database_from_nc()
+    ).database_from_nc(output_zarr, mode="o")
 
     # Validation
     gpkg_read = PixCGpkgReader(output_gpkg)
@@ -118,12 +102,10 @@ def test_convert_shape_limited_area(input_files, first_file, tmp_folder):
 
     pixc = PixCNc2ShpConverter(
             input_files,
-            output,
             variables=converted_vars,
             area_of_interest=LIM_AREA_GEOM,
-            mode='o',
     )
-    pixc.database_from_nc()
+    pixc.database_from_nc(output, mode="o")
 
     # TODO : read the data
 

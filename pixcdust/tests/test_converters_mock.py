@@ -39,7 +39,6 @@ class TestConverters(unittest.TestCase):
         """
         pixc = PixCNc2GpkgConverter(
             "/tmp",
-            "foo",
             variables=self.list_vars,
         )
         # forcing data with mock
@@ -55,7 +54,6 @@ class TestConverters(unittest.TestCase):
 
         pixc = PixCNc2ZarrConverter(
             "/tmp",
-            "foo",
             variables=self.list_vars,
         )
         # forcing data with mock

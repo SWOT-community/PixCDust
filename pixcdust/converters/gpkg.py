@@ -1,6 +1,7 @@
 """Geopackage converters."""
 
 import os
+from pathlib import Path
 from typing import Optional, Union
 from dataclasses import dataclass
 
@@ -8,25 +9,27 @@ from tqdm import tqdm
 import fiona
 import geopandas as gpd
 
-from pixcdust.converters.core import PixCConverter, GeoLayerH3Projecter
+from pixcdust.converters.core import PixCConverterWSE, GeoLayerH3Projecter
 from pixcdust.readers.netcdf import PixCNcSimpleReader
 from pixcdust.readers.zarr import PixCZarrReader
 from pixcdust.readers.gpkg import PixCGpkgReader
 
 
-class PixCNc2GpkgConverter(PixCConverter):
+class PixCNc2GpkgConverter(PixCConverterWSE):
     """Converter from official SWOT Pixel Cloud Netcdf to a Geopackage database.
 
     Attributes:
         path_in: List of path of files to convert.
-        path_out: Output path of the convertion.
         variables: Optionally only read these variables.
         area_of_interest: Optionally only read points in area_of_interest.
-        mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
 
     """
 
-    def database_from_nc(self) -> None:
+    def database_from_nc(self, path_out: str | Path, mode: str = "w", compute_wse: bool = True) \
+            -> None:
+        path_out = str(path_out)
+        if compute_wse:
+            self._append_wse_vars()
         for path in tqdm(self.path_in):
             ncsimple = PixCNcSimpleReader(
                 path,
@@ -44,11 +47,11 @@ class PixCNc2GpkgConverter(PixCConverter):
 {pass_number}_{tile_number}{swath_side}"
 
             # cheking if output file and layer already exist
-            if os.path.exists(self.path_out) and self.mode == "w":
-                if layer_name in fiona.listlayers(self.path_out):
+            if os.path.exists(path_out) and mode == "w":
+                if layer_name in fiona.listlayers(path_out):
                     tqdm.write(
                         f"skipping layer {layer_name} \
-                            (already in geopackage {self.path_out})"
+                            (already in geopackage {path_out})"
                     )
                     continue
             # converting data from xarray to geodataframe
@@ -63,12 +66,10 @@ class PixCNc2GpkgConverter(PixCConverter):
                 )
                 continue
 
-            if self._wse:
-                gdf[self._get_name_wse_var()] = \
-                    gdf[self._get_vars_wse_computation()[0]] -\
-                    gdf[self._get_vars_wse_computation()[1]]
+            if compute_wse:
+                self._compute_wse(gdf)
             # writing pixc layer in output file, geopackage
-            gdf.to_file(self.path_out, layer=layer_name, driver="GPKG")
+            gdf.to_file(path_out, layer=layer_name, driver="GPKG")
 
 
 @dataclass

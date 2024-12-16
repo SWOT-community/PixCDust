@@ -17,31 +17,24 @@ class PixCConverter:
 
     Attributes:
         path_in: List of path of files to convert.
-        path_out: Output path of the convertion.
         variables: Optionally only read these variables.
         area_of_interest: Optionally only read points in area_of_interest.
-        mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
     """
 
     def __init__(
         self,
         path_in: str | Iterable[str] | Path | Iterable[Path],
-        path_out: str,
         variables: Optional[list[str]] = None,
         area_of_interest: Optional[gpd.GeoDataFrame] = None,
-        mode: str = "w",
-        compute_wse: bool = True,
     ):
         """Basic initialisation of a pixcdust converter.
 
         They convert from official SWOT Pixel Cloud Netcdf to the supported format.
 
-        Attributes:
+        Args:
             path_in: Path or list of path of file(s) to convert.
-            path_out: Output path of the convertion.
             variables: Optionally only read these variables.
             area_of_interest: Optionally only read points in area_of_interest.
-            mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
             compute_wse:  toggle water surface elevation computation.
         """
         if isinstance(path_in, str | Path):
@@ -49,27 +42,49 @@ class PixCConverter:
         else:
             self.path_in = [str(p) for p in path_in]
 
-        self.path_out = path_out
         self.variables = copy.copy(variables)
         self.area_of_interest = area_of_interest
-        if mode in ["w", "o"]:
-            self.mode = mode
-        else:
-            raise IOError(
-                f"Expected optional argument `mode` \
-                to be 'w'(write/append) or 'o'(overwrite), \
-                received {mode} instead"
-            )
 
-        self._wse = compute_wse
-        # we need some vars to compute wse
-        if self._wse and self.variables is not None:
-            for var in self._get_vars_wse_computation():
-                self.variables.append(var)
-
-    def database_from_nc(self) -> None:
-        """Convert the path_in files to path_out."""
+    def database_from_nc(self, path_out: str | Path, mode: str = "w") -> None:
+        """Convert the path_in files to path_out.
+        Args:
+            path_out: Output path of the convertion.
+            mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
+        """
         raise NotImplementedError
+
+
+class PixCConverterWSE(PixCConverter):
+    """Abstract class parent of pixcdust converters supporting water surface elevation computation.
+
+    They convert from official SWOT Pixel Cloud Netcdf to the supported format.
+
+    Attributes:
+        path_in: List of path of files to convert.
+        variables: Optionally only read these variables.
+        area_of_interest: Optionally only read points in area_of_interest.
+    """
+    def database_from_nc(self, path_out: str | Path, mode: str = "w", compute_wse: bool = True) \
+            -> None:
+        """Convert the path_in files to path_out.
+        Args:
+            path_out: Output path of the convertion.
+            mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
+            compute_wse:  toggle water surface elevation computation.
+        """
+        raise NotImplementedError
+
+    def _append_wse_vars(self):
+        """Need some vars to compute wse."""
+        if self.variables is not None:
+            for var in self._get_vars_wse_computation():
+                if var not in self.variables:
+                    self.variables.append(var)
+
+    def _compute_wse(self, gdf):
+        gdf[self._get_name_wse_var()] = \
+            gdf[self._get_vars_wse_computation()[0]] - \
+            gdf[self._get_vars_wse_computation()[1]]
 
     @staticmethod
     def _get_vars_wse_computation() -> list[str]:
