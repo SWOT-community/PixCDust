@@ -50,7 +50,8 @@ def gdf_to_h3_gdf(
         )
 
     # compute statistics in each H3 cell in a new dataframe
-    h3_df = gdf.groupby(h3_col)[var].describe().reset_index()
+    # h3_df = gdf.groupby(h3_col)[var].describe().reset_index()
+    h3_df = gdf.groupby(h3_col).describe().reset_index()
 
     # add the geometry of each H3 cell in a new geodataframe
     h3_geoms = h3_df[h3_col].apply(cell_to_shapely)
