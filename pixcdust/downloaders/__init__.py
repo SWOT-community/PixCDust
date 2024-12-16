@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 #
-
+"""Downloader of Pixc products. Only hydroweb.next is currently supported."""

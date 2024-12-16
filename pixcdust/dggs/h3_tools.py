@@ -22,13 +22,13 @@ import h3
 from shapely.geometry import Polygon
 
 
-def cell_to_shapely(cell):
+def cell_to_shapely(cell) -> Polygon:
     coords = h3.h3_to_geo_boundary(cell)
     flipped = tuple(coord[::-1] for coord in coords)
     return Polygon(flipped)
 
 
-def get_h3_res_name(res: int):
+def get_h3_res_name(res: int) -> str:
     return "h3_" + str(res).zfill(2)
 
 
@@ -50,9 +50,10 @@ def gdf_to_h3_gdf(
         )
 
     # compute statistics in each H3 cell in a new dataframe
-    h3_df = gdf.groupby(h3_col)[var].describe().reset_index()
+    # h3_df = gdf.groupby(h3_col)[var].describe().reset_index()
+    h3_df = gdf.groupby(h3_col).describe().reset_index()
 
     # add the geometry of each H3 cell in a new geodataframe
-    h3_geoms = h3_df[h3_col].apply(lambda x: cell_to_shapely(x))
+    h3_geoms = h3_df[h3_col].apply(cell_to_shapely)
     # copy the geometries in the previous statiscal dataframe
     return gpd.GeoDataFrame(data=h3_df, geometry=h3_geoms, crs=4326)

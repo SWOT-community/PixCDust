@@ -14,36 +14,48 @@
 # limitations under the License.
 #
 #
+"""Converted Pixcdust zarr database Reader."""
 
-
-"""This module reads the zarr archives created by the converters"""
-
-from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import datetime
 import xarray as xr
-import geopandas as gpd
 import zcollection
 
-from pixcdust.readers.netcdf import PixCNcSimpleConstants
-from pixcdust.converters.geo_utils import geoxarray_to_geodataframe
+from pixcdust.readers.base_reader import BaseReader
 
 
-@dataclass
-class PixCZarrReader:
-    path: str
-    variables: list[str] = None
-    data: xr.Dataset = None
+class PixCZarrReader(BaseReader):
+    """Zarr pixcdust database reader.
+
+    Read a database from a Zarr database (folder).
+    You can then request a xr.Dataset, pd.DataFrame or gpd.GeoDataFrame
+    view of the database.
+
+    Attributes:
+        path: Path to read.
+        variables: Optionally only read these variables.
+        area_of_interest: Optionally only read points in area_of_interest.
+        MULTI_FILE_SUPPORT: False, only support one file.
+    """
+
 
     def read(
         self,
         date_interval: Optional[
             Tuple[datetime.datetime, datetime.datetime]
             ] | None = None,
-            ):
+            ) -> None:
+        """Load a zarr database.
+        You can then access from data or with methods like
+        to_xarray, to_dataframe or to_geodataframe.
 
-        collection: zcollection.Dataset = zcollection.open_collection(
+        Args:
+            date_interval: Optional date filter on the database read.
+                Only load data dated within the interval.
+        """
+
+        collection = zcollection.open_collection(
             self.path,
             mode='r',
         )
@@ -51,44 +63,15 @@ class PixCZarrReader:
         if date_interval:
             date_min = date_interval[0]
             date_max = date_interval[1]
-            self.data = collection.load(
+            data_z = collection.load(
                 filters=lambda keys: date_min <= datetime.datetime(
                     keys['year'], keys['month'], keys['day'],
                     keys['hour'], keys['minute'], keys['second'],
                 ) <= date_max
             )
         else:
-            self.data = collection.load()
-
-    def to_xarray(self):
-        if self.data is None:
-            return xr.Dataset()
-        return self.data.to_xarray()
-
-    def to_geodataframe(
-        self,
-        **kwargs,
-            ) -> gpd.GeoDataFrame:
-        """_summary_
-
-        Args:
-            crs (str | int, optional): Coordinate Reference System.\
-                Defaults to 4326.
-            area_of_interest (gpd.GeoDataFrame, optional): a geodataframe\
-                containing polygons of interest where data will be restricted.\
-                Defaults to None.
-
-        Returns:
-            gpd.GeoDataFrame: a geodataframe with information from file
-        """
-        if self.data is None:
-            return gpd.GeoDataFrame()
-
-        cst = PixCNcSimpleConstants()
-
-        return geoxarray_to_geodataframe(
-            self.to_xarray(),
-            long_name=cst.default_long_name,
-            lat_name=cst.default_lat_name,
-            **kwargs,
-            )
+            data_z = collection.load()
+        if data_z is None:
+            self.data = xr.Dataset()
+        else:
+            self.data = data_z.to_xarray()

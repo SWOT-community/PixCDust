@@ -19,6 +19,7 @@ import click
 
 import geopandas as gpd
 
+from pixcdust.converters.core import PixCConverter
 from pixcdust.converters.gpkg import PixCNc2GpkgConverter
 from pixcdust.converters.zarr import PixCNc2ZarrConverter
 from pixcdust.converters.shapefile import PixCNc2ShpConverter
@@ -64,19 +65,22 @@ def cli(
     format_out: str,
     paths_in: list[str],
     path_out: str,
-    variables: list[str],
+    variables: str,
     aoi: str,
     mode: str,
         ):
     """_summary_
 
     Args:
-        format_out (str): _description_
-        paths_in (list[str]): _description_
+        format_out (str): file format to convert to.
+        path_in: List of path of files to convert.
+        path_out: Output path of the convertion.
+        variables: Optionally only read these variables.
+        aoi: Optionally only read points in this area of interest.
         path_out (str): _description_
         variables (list[str]): _description_
-        aoi (str): _description_
-        mode (str): mode for writing in database
+        mode: Writing mode of the output. Must be 'w'(write/append) or 'o'(overwrite).
+
 
     Raises:
         NotImplementedError: _description_
@@ -101,35 +105,29 @@ def cli(
         gdf_aoi = None
 
     if format_out.lower() == 'gpkg':
-        pixc = PixCNc2GpkgConverter(
+        pixc:PixCConverter = PixCNc2GpkgConverter(
             paths_in,
-            path_out,
             variables=list_vars,
             area_of_interest=gdf_aoi,
-            mode=mode,
         )
     elif format_out.lower() == 'zarr':
         pixc = PixCNc2ZarrConverter(
             sorted(paths_in),
-            path_out,
             variables=list_vars,
             area_of_interest=gdf_aoi,
-            mode=mode,
         )
     elif format_out.lower() == 'shp':
         pixc = PixCNc2ShpConverter(
             paths_in,
-            path_out,
             variables=list_vars,
             area_of_interest=gdf_aoi,
-            mode=mode,
         )
     else:
         raise NotImplementedError(
             f'the conversion format {format_out} has not been implemented yet',
             )
 
-    pixc.database_from_nc()
+    pixc.database_from_nc(path_out, mode=mode)
 
 
 def main():

@@ -1,2 +1,4 @@
 *.pyc
 poetry.lock
+conftest.json
+.idea

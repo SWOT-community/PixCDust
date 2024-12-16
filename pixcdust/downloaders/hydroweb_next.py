@@ -13,15 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+"""Downloaders for hydroweb.next. Require an API-Key see HELP_MESSAGE."""
 
 import os
-from typing import Optional, Union, Tuple
+from pathlib import Path
+from typing import Optional, Union, Tuple, List
 import datetime
 
 import geopandas as gpd
 
-from eodag import EODataAccessGateway
+from eodag import EODataAccessGateway, SearchResult
 from eodag import setup_logging
 
 HELP_MESSAGE = """
@@ -47,45 +48,56 @@ https://eodag.readthedocs.io
 class Downloader:
     """Downloader class for hydroweb.next STAC API.
 
-    Args:
-        collection_name (str): name of the collection in hydroweb.next catalog
-        geometry (str | [lonmin, latmin, lonmax, latmax] |
-            gpd.GeoDataFrame | None, optional):
-            a geometry used as search criteria. Defaults to None.
-        dates ((datetime.date, datetime.date) | None, optional):
-            minimum and maximum dates to be used as search criteria.
-            Defaults to None.
-        path_download (str, optional):
-            download path. Defaults to "/tmp/hydroweb_next".
-        verbose (int, optional): verbose level. Defaults to 0.
+    Attributes:
+        collection_name: Name of the collection in hydroweb.next catalog
+        geometry: Geometry used as search criteria. Defaults to None.
+        dates: Minimum and maximum dates to be used as search criteria. Defaults to None.
+        path_download: Download path. Defaults to "/tmp/hydroweb_next".
+        query_args: Query filters to request from hydroweb.next generated from parameters.
+        search_results: Products founds matching the query_args (and downloaded).
+        dag: Hydroweb.next API
 
-    Raises:
-        AttributeError: if the geometry is not one
-            of (str, tuple, list, gpd.GeoDataFrame)
+
+
     """
     PROVIDER = "hydroweb_next"
 
     def __init__(
         self,
         collection_name: str,
-        geometry: Union[str, list, gpd.GeoDataFrame, None] = (None,),
-        dates: Optional[Tuple[datetime.date, datetime.date]] | None = (None,),
-        path_download: str = ("/tmp/hydroweb_next",),
-        verbose: Optional[int] = (0,),
+        geometry: Union[str, list[str], gpd.GeoDataFrame, None] = (None,),
+        dates: Optional[Tuple[datetime.date, datetime.date]] = None,
+        path_download: str | Path = "/tmp/hydroweb_next",
+        verbose: Optional[int] = 0,
     ):
+        """Downloader for hydroweb.next STAC API initialization.
+
+        Args:
+            collection_name: Name of the collection in hydroweb.next catalog.
+            geometry: A geometry used as search criteria. Defaults to None.
+            dates: Minimum and maximum dates to be used as search criteria.
+                Defaults to None.
+            path_download:
+                download path. Defaults to "/tmp/hydroweb_next".
+            verbose: Verbose level (0: nothing, 1: only progress bars, 2: INFO, 3: DEBUG).
+                Defaults to 0.
+
+        Raises:
+            AttributeError: if the geometry is not one
+                of (str, tuple, list, gpd.GeoDataFrame)
+        """
 
         self.collection_name = collection_name
         self.geometry = geometry
         self.dates = dates
-        self.path_download = path_download
-        self.verbose = verbose
+        self.path_download = str(path_download)
 
         self.query_args = {}
-        self.search_results = []
+        self.search_results: List[SearchResult] = []
         self.dag = EODataAccessGateway()
 
         setup_logging(
-            self.verbose
+            verbose
         )  # 0: nothing, 1: only progress bars, 2: INFO, 3: DEBUG
 
         # Set timeout to 30s
@@ -114,7 +126,7 @@ class Downloader:
 
         self.query_args.update(default_search_criteria)
 
-    def _search(self, geom=None):
+    def _search(self, geom:Optional[str] = None) -> None:
         if geom is not None:
             self.query_args["geom"] = geom
 
@@ -134,8 +146,11 @@ class Downloader:
         Args:
             geometry (gpd.GeoDataFrame): a geodataframe containing search
                 polygons of multipolygons
-            tolerance (float | None, optional): a float number passed to the
-                simplify method. Defaults to None.
+            tolerance (float | None, optional): Maximum tolerance of the geometry simplification.
+                Defaults to None.
+                All parts of a simplified geometry will be no more than
+                `tolerance` distance from the original. It has the same units
+                as the coordinate reference system of the GeoSeries.
 
         Raises:
             AttributeError: if the number of nodes in a single polygon
@@ -165,7 +180,7 @@ class Downloader:
 
         return geom
 
-    def __check_collection_name(self):
+    def __check_collection_name(self) -> None:
 
         list_collections = [
             d['ID'] for d in self.dag.list_product_types(
@@ -180,7 +195,14 @@ class Downloader:
                 f"\nAvailable collections are: {list_collections}"
             ))
 
-    def search_download(self, tolerance: float = None):
+    def search_download(self, tolerance: Optional[float] = None) -> None:
+        """Search files according to the query and download them.
+
+        Args:
+            tolerance: Maximum tolerance of the geometry simplification.
+                Cf `self._explode_simplify_geometry`.
+
+        """
         if isinstance(self.geometry, str) or self.geometry is None:
             # TODO implement case to explode multipolyong in string
             self._search(self.geometry)
@@ -203,7 +225,7 @@ class Downloader:
             self.search_results, outputs_prefix=self.path_download
         )
 
-        if downloaded_paths is None:
+        if not downloaded_paths:
             print(
                 f"No files downloaded! Verify API-KEY and/or \
 product search configuration. \
@@ -212,5 +234,21 @@ product search configuration. \
 
 
 class PixCDownloader(Downloader):
+    """Downloader for SWOT Pixel Cloud files from  hydroweb.next."""
     def __init__(self, *args, **kwargs):
+        """Downloader for SWOT Pixel Cloud files from  hydroweb.next initialization.
+
+        Keyword Args:
+            geometry: A geometry used as search criteria. Defaults to None.
+            dates: Minimum and maximum dates to be used as search criteria.
+                Defaults to None.
+            path_download:
+                download path. Defaults to "/tmp/hydroweb_next".
+            verbose: Verbose level (0: nothing, 1: only progress bars, 2: INFO, 3: DEBUG).
+                Defaults to 0.
+
+        Raises:
+            AttributeError: if the geometry is not one
+                of (str, tuple, list, gpd.GeoDataFrame)
+        """
         super().__init__("SWOT_L2_HR_PIXC", *args, **kwargs)
