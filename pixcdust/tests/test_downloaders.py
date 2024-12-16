@@ -5,6 +5,11 @@ from pixcdust.tests.init_tests import download_test_data
 
 @pytest.mark.downloader
 def test_hydroweb_next(hydroweb_env, input_folder, tmp_folder):
+    """Test h3ydorewb.next downloader.
+
+    Require to have configured --hydroweb_auth with init_tests.py.
+    Only run with the option --ddl.
+    """
     dl_dir = tmp_folder / "download_test"
     download_test_data(dl_dir)
 

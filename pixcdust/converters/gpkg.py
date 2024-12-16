@@ -118,6 +118,14 @@ class GpkgH3Projecter:
             # lancer write avec le bon nom
 
     def _compute_layer(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """Convert to an H3 projection a single layer.
+
+        Args:
+            gdf: Layer to project.
+
+        Returns:
+            Converted layer.
+        """
         geolayer = GeoLayerH3Projecter(
             gdf,
             self.variable,

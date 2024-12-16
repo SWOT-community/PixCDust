@@ -49,7 +49,7 @@ class PixCConverter:
         """Convert the path_in files to path_out.
         Args:
             path_out: Output path of the convertion.
-            mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
+            mode: Writing mode of the output. Must be 'w'(write/append) or 'o'(overwrite).
         """
         raise NotImplementedError
 

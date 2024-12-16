@@ -3,6 +3,8 @@ from pixcdust.readers import PixCGpkgReader
 from .test_converters import converted_lim_gpkg
 
 def test_h3_proj(converted_lim_gpkg):
+    """Test h3 projection.
+    """
     # need to run on a limited dataset to stay in memory.
     reader = PixCGpkgReader(converted_lim_gpkg)
 

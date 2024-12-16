@@ -8,6 +8,8 @@ from pathlib import Path
 from pixcdust.downloaders.hydroweb_next import PixCDownloader
 
 class JsonTestsSettings:
+    """ Reader-writer for the test configuration.
+    """
     CONFIG_FILE_NAME = 'conftest.json'
     def __init__(self):
         try:
@@ -18,6 +20,8 @@ class JsonTestsSettings:
 
     @property
     def input_folder(self) -> Path:
+        """ Path to folder where test input data are downloaded and stored.
+        """
         try:
             return Path(self._settings["input_folder"])
         except KeyError:
@@ -29,6 +33,8 @@ class JsonTestsSettings:
 
     @property
     def tmp_folder(self) -> Path:
+        """ Path to folder where test outputs data are written.
+        """
         return Path(self._settings.get("tmp_folder", "/tmp/pixcdust-test"))
 
     @tmp_folder.setter
@@ -37,6 +43,8 @@ class JsonTestsSettings:
 
     @property
     def hydroweb_auth(self) -> str:
+        """Hydroweb.next personal API key.
+        """
         return self._settings.get("hydroweb_auth", "")
 
     @hydroweb_auth.setter
@@ -44,24 +52,37 @@ class JsonTestsSettings:
         self._settings["hydroweb_auth"] = value
 
     def write(self) -> None:
+        """Write the config in JSON to self._config_path.
+        """
         with open(self._config_path, mode='w') as f:
             json.dump(self._settings, f)
         os.chmod(self._config_path,0o600)
 
     @property
     def _config_path(self) -> Path:
+        """Path of the JSON config file.
+
+        Should be the absolute path of tests/conftest.json
+        """
         return Path(__file__).parent.absolute()/self.CONFIG_FILE_NAME
 
-def init_hydroweb_env(test_settings):
+def init_hydroweb_env(test_settings: JsonTestsSettings) -> None:
+    """Configure the Hydroweb.next API key of the current environment.
+
+    Args:
+        test_settings: the key is read from `test_settings.hydroweb_auth`.
+    """
     apikey = test_settings.hydroweb_auth
     if apikey:
         os.environ["EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY"] = apikey
 
-#polygon = Polygon([(-0.945, 43.522),(-0.945, 43.537),(-0.823, 43.537),(-0.823 ,43.522)])
-#polygon = Polygon([(-1.50580, 43.39543),(-1.36597, 43.39543),(-1.36597, 43.56471),(-1.50580 ,43.56471),(-1.50580, 43.39543)])
-#geometry = gpd.GeoDataFrame(index=[0], crs='epsg:4326', geometry=[polygon])
 
 def download_test_data(path_download: Path) -> None:
+    """Download the test data from hydroweb.next.
+
+    Args:
+        path_download: where to store the test data.
+    """
     dates = (
         datetime(2024,8,1),
         datetime(2024,8,15),
@@ -77,7 +98,7 @@ def download_test_data(path_download: Path) -> None:
     pixcdownloader.search_download()
 
 TEST_DATA_COUNT = 2
-def check_test_data(path_download: Path):
+def check_test_data(path_download: Path) -> bool:
     data_list = list(path_download.glob("*/*nc"))
     return len(data_list) == TEST_DATA_COUNT
 

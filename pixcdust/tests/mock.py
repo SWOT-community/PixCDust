@@ -25,14 +25,14 @@ from pixcdust.readers.netcdf import PixCNcSimpleConstants
 
 
 def mock_xarray(length: int = 10000) -> xr.Dataset:
-    """mocks an xarray extracted from a typical SWOT PixC netcdf file
-    and enhanced with PixCNcSimpleReader and orbit infos
+    """Locks an xarray extracted from a typical SWOT PixC netcdf file
+    and enhanced with PixCNcSimpleReader and orbit infos.
 
     Args:
-        length (int, optional): length of the array. Defaults to 10000.
+        length: length of the array. Defaults to 10000.
 
     Returns:
-        xr.Dataset: dataset with some typical variables
+        dataset with some typical variables
     """
     cst = PixCNcSimpleConstants()
 

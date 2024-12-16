@@ -57,16 +57,14 @@ class BaseReader:
             area_of_interest: Optionally only read points in area_of_interest.
         """
         if isinstance(path, str | Path):
-            path = str(path)
+            self.path:  str | Iterable[str] = str(path)
             self.multi_file_db = False
         else:
-            path = [str(p) for p in path]
+            if not self.MULTI_FILE_SUPPORT:
+                raise ValueError("This reader does not support opening multiple files.")
             self.multi_file_db = True
             # sort the filenames by date as some converters need monotonic dates.
-            path = sorted_by_date(path)
-        if self.multi_file_db and not self.MULTI_FILE_SUPPORT:
-            raise ValueError("This reader does not support opening multiple files.")
-        self.path:  str | Iterable[str] = path
+            self.path  = [str(p) for p in sorted_by_date(path)]
         self.area_of_interest = area_of_interest
         self._data: Optional[xr.Dataset] = None
         self.variables = variables
