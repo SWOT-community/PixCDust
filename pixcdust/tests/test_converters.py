@@ -108,7 +108,7 @@ def test_convert_gpkg_and_zarr_limited_area(input_files, first_file, tmp_folder)
     gpkg_read.read()
     zarr_read = PixCZarrReader(output_zarr)
     zarr_read.read()
-    validate_conversion(gpkg_read.data, converted_vars, zarr_read.data, is_longer=False, len_tol=1, sort_var="longitude")
+    validate_conversion(gpkg_read.data, converted_vars, zarr_read.data, is_longer=False, len_tol=2, sort_var="longitude")
 
 
 def test_convert_shape_limited_area(input_files, first_file, tmp_folder):

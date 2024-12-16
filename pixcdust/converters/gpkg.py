@@ -1,5 +1,7 @@
+"""Geopackage converters."""
+
 import os
-from typing import Optional
+from typing import Optional, Union
 from dataclasses import dataclass
 
 from tqdm import tqdm
@@ -13,15 +15,18 @@ from pixcdust.readers.gpkg import PixCGpkgReader
 
 
 class PixCNc2GpkgConverter(PixCConverter):
-    """Class for converting Pixel Cloud files to Geopackage database
+    """Converter from official SWOT Pixel Cloud Netcdf to a Geopackage database.
+
+    Attributes:
+        path_in: List of path of files to convert.
+        path_out: Output path of the convertion.
+        variables: Optionally only read these variables.
+        area_of_interest: Optionally only read points in area_of_interest.
+        mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
 
     """
 
     def database_from_nc(self) -> None:
-        """function to create a geopackage database from a single or\
-            multiple netcdf PIXC files
-
-        """
         for path in tqdm(self.path_in):
             ncsimple = PixCNcSimpleReader(
                 path,
@@ -68,11 +73,22 @@ class PixCNc2GpkgConverter(PixCConverter):
 
 @dataclass
 class GpkgH3Projecter:
-    
+    """Converter from a Gpkg pixelcloud to a Gpkg H3 projection.
+
+    Attributes:
+        path: Gpkg pixelcloud to convert.
+        variable: FIXME
+        h3_res: esolotion of the h3 projection.
+        conditions: Optional limits on points converted.
+        h3_layer_pattern: Postfix of output layers.
+        path_out: Output path of the convertion.
+
+    """
+
     path: str
     variable: str
     h3_res: int
-    conditions: Optional[dict] = None
+    conditions: Optional[dict[str,dict[str, Union[str, float]]]] = None
     h3_layer_pattern: str = '_h3'
     path_out: Optional[str] = None
     # database: PixCGpkgReader
@@ -88,6 +104,7 @@ class GpkgH3Projecter:
             self.path_out = self.path
 
     def compute_layers(self) -> None:
+        """Convert to an H3 projection and write it as Gpkg in `self.path_out`"""
         for layer in tqdm(self.database.layers, desc="Layers"):
             gdf = self.database.read_single_layer(layer)
             h3_gdf = self._compute_layer(gdf)
@@ -114,8 +131,9 @@ class GpkgH3Projecter:
 
 @dataclass
 class PixCZarr2GpkgConverter:
-    """Class for converting Pixel Cloud zcollection to Geopackage database
-
+    """Converter from Pixel Cloud zcollection to Geopackage database
+    Attributes:
+        path: Gpkg pixelcloud to convert.
     """
     path: str
     data: gpd.GeoDataFrame = None
@@ -125,5 +143,6 @@ class PixCZarr2GpkgConverter:
         self.__collection.read()
 
     def convert(self, path_out: str) -> None:
+        """Convert and write to path_out."""
         self.data = self.__collection.to_geodataframe()
         self.data.to_file(path_out, driver="GPKG")

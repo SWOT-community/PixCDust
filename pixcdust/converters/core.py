@@ -1,35 +1,53 @@
+"""Interface used by all Pixcdust Converters."""
+
 import copy
 from dataclasses import dataclass
 import operator
+from pathlib import Path
 
-from typing import Optional, Union
+from typing import Optional, Union, Iterable
 
 import geopandas as gpd
 
-from pixcdust.readers.base_reader import sorted_by_date
-
 
 class PixCConverter:
-    """missing docstring"""
+    """Abstract class parent of pixcdust converters.
+
+    They convert from official SWOT Pixel Cloud Netcdf to the supported format.
+
+    Attributes:
+        path_in: List of path of files to convert.
+        path_out: Output path of the convertion.
+        variables: Optionally only read these variables.
+        area_of_interest: Optionally only read points in area_of_interest.
+        mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
+    """
 
     def __init__(
         self,
-        path_in: list[str] | str,
+        path_in: str | Iterable[str] | Path | Iterable[Path],
         path_out: str,
         variables: Optional[list[str]] = None,
         area_of_interest: Optional[gpd.GeoDataFrame] = None,
         mode: str = "w",
         compute_wse: bool = True,
     ):
+        """Basic initialisation of a pixcdust converter.
 
-        if isinstance(path_in, list):
-            self.path_in = self._sort_input_files(path_in)
-        elif isinstance(path_in, str):
-            self.path_in = [path_in]
+        They convert from official SWOT Pixel Cloud Netcdf to the supported format.
+
+        Attributes:
+            path_in: Path or list of path of file(s) to convert.
+            path_out: Output path of the convertion.
+            variables: Optionally only read these variables.
+            area_of_interest: Optionally only read points in area_of_interest.
+            mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
+            compute_wse:  toggle water surface elevation computation.
+        """
+        if isinstance(path_in, str | Path):
+            self.path_in = [str(path_in)]
         else:
-            raise IOError(
-                f"Expected `path_in` list or str, received {type(path_in)}"
-            )
+            self.path_in = [str(p) for p in path_in]
 
         self.path_out = path_out
         self.variables = copy.copy(variables)
@@ -50,28 +68,27 @@ class PixCConverter:
                 self.variables.append(var)
 
     def database_from_nc(self) -> None:
-        """missing Docstring"""
+        """Convert the path_in files to path_out."""
         raise NotImplementedError
 
     @staticmethod
     def _get_vars_wse_computation() -> list[str]:
+        """Names of fields used to compute wse."""
         return ['height', 'geoid']
 
     @staticmethod
     def _get_name_wse_var() -> str:
+        """Output name for wse."""
         return 'wse'
-
-    @staticmethod
-    def _sort_input_files(files: list[str]) -> list[str]:
-        """method sorting files in ascending order based on their names.
-        Warning this works with SWOT Pixel Cloud original file names only.
-        """
-        return sorted_by_date(files)
-
 
 @dataclass
 class GeoLayerH3Projecter:
     """Class for adding H3 projections to databases
+
+    Attributes:
+        data: data getting projected
+        variable: FIXME
+        resolution: Resolution
 
     """
     data: gpd.GeoDataFrame
@@ -92,9 +109,9 @@ class GeoLayerH3Projecter:
         Raises:
             IOError: if variable provided in conditions are not\
                 in self.data.columns
-            IOError: if 'operator' and 'to' keys are not\
+            ValueError: if 'operator' and 'to' keys are not\
                 in conditions
-            IOError: if operator is not the function name of\
+            AttributeError: if operator is not the function name of\
                 the operator module
         """
         _k_operator = 'operator'
@@ -110,17 +127,10 @@ class GeoLayerH3Projecter:
                 )
             for instructions in conditions[k].keys():
                 if instructions not in [_k_operator, _k_to]:
-                    raise IOError(
+                    raise ValueError(
                         f'dict conditions expected {_k_to} and {_k_operator}\
                         keys in dict {conditions},\
                         received {instructions}'
-                    )
-                if conditions[k][_k_operator] not in operator.__dict__:
-                    raise IOError(
-                        f'operator expected a function name\
-                            from the operator built-in module\
-                            {operator.__dict__},\
-                            found {conditions[k][_k_operator]} instead'
                     )
             print(f"operator.{conditions[k][_k_operator]}")
             ope = getattr(operator, conditions[k][_k_operator])
@@ -132,8 +142,8 @@ class GeoLayerH3Projecter:
             ]
 
     def compute_h3_layer(self) -> None:
+        """Project data to h3."""
         from pixcdust.dggs import h3_tools
-        print(type(self.data))
         self.data = h3_tools.gdf_to_h3_gdf(
             self.data,
             self.resolution,

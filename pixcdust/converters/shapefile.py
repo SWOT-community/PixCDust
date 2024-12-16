@@ -1,3 +1,5 @@
+"""Shapefile converter."""
+
 import os
 from tqdm import tqdm
 
@@ -6,19 +8,25 @@ from pixcdust.readers.netcdf import PixCNcSimpleReader
 
 
 class PixCNc2ShpConverter(PixCConverter):
-    """Class for converting Pixel Cloud files to Shapefile database
+    """Converter from official SWOT Pixel Cloud Netcdf to Shapefile database
 
+    Attributes:
+        path_in: List of path of files to convert.
+        path_out: Output path of the convertion.
+        variables: Optionally only read these variables.
+        area_of_interest: Optionally only read points in area_of_interest.
+        mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
     """
+
     def database_from_nc(self) -> None:
-        """function to create a database from a single or multiple\
-            netcdf PIXC files
-        """
         try:
             os.mkdir(self.path_out)
         except FileExistsError:
             pass
         for path in tqdm(self.path_in):
-            ncsimple = PixCNcSimpleReader(path, variables=self.variables, area_of_interest=self.area_of_interest)
+            ncsimple = PixCNcSimpleReader(path,
+                                          variables=self.variables,
+                                          area_of_interest=self.area_of_interest)
 
             filename_out = os.path.splitext(os.path.basename(path))[0]
             path_out = os.path.join(

@@ -1,7 +1,13 @@
+"""Zarr converter."""
+
 import os
 import shutil
+from pathlib import Path
+from typing import Optional, Iterable
+
 import fsspec
 
+import geopandas as gpd
 import zcollection
 import zcollection.indexing
 import dask
@@ -15,18 +21,47 @@ TIME_VARNAME = 'time'
 
 
 class PixCNc2ZarrConverter(PixCConverter):
-    """Class for converting Pixel Cloud files to Zarr database
+    """Converter from official SWOT Pixel Cloud Netcdf to Shapefile database
 
+    Attributes:
+        path_in: List of path of files to convert.
+        path_out: Output path of the convertion.
+        variables: Optionally only read these variables.
+        area_of_interest: Optionally only read points in area_of_interest.
+        mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
     """
-    collection: zcollection.collection.Collection = None
-    __time_varname: str = TIME_VARNAME
-    __fs = fsspec.filesystem("file")
-    __chunk_size = dask.utils.parse_bytes('2MiB')
-    __cst = PixCNcSimpleConstants()
+
+    def __init__(
+        self,
+        path_in: str | Iterable[str] | Path | Iterable[Path],
+        path_out: str,
+        variables: Optional[list[str]] = None,
+        area_of_interest: Optional[gpd.GeoDataFrame] = None,
+        mode: str = "w",
+    ):
+        """Basic initialisation of a pixcdust converter.
+
+        They convert from official SWOT Pixel Cloud Netcdf to the supported format.
+
+        Attributes:
+            path_in: Path or list of path of file(s) to convert.
+            path_out: Output path of the convertion.
+            variables: Optionally only read these variables.
+            area_of_interest: Optionally only read points in area_of_interest.
+            mode: Writing mode of the outpout. Must be 'w'(write/append) or 'o'(overwrite).
+        """
+        super().__init__(path_in=path_in,
+                         path_out=path_out,
+                         variables=variables,
+                         area_of_interest=area_of_interest,
+                         mode=mode)
+        self.collection: zcollection.collection.Collection = None
+        self.__time_varname: str = TIME_VARNAME
+        self.__fs = fsspec.filesystem("file")
+        self.__chunk_size = dask.utils.parse_bytes('2MiB')
+        self.__cst = PixCNcSimpleConstants()
 
     def database_from_nc(self) -> None:
-        """function to create a database from a multiple netcdf PIXC files
-        """
 
         if self.mode in ['o', 'overwrite'] and os.path.exists(self.path_out):
             shutil.rmtree(self.path_out)
