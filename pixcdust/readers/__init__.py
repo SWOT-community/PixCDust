@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
 
 """Readers for SWOT Pixel Cloud.
 They support the Netcdf official format and converted Zarr or Geopackage database.

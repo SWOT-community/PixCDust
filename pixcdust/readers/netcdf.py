@@ -13,10 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
-
 """Pre-conversion SWOT Pixel Cloud Netcdf reader."""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
