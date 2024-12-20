@@ -18,7 +18,10 @@ Start here to understand what you can do: "There is nothing more frustrating tha
 
 ## ⬇️ *Downloaders* 
 The downloader classes allow you to directly download SWOT Pixel Cloud files from hydroweb.next (or other sources such as PO.DAAC to be implemented).  
-For hydroweb.next, it requires you to create an account and an API Key (token) from the platform: https://hydroweb.next.theia-land.fr
+For hydroweb.next, it requires you to create an account and an API Key (token) from the platform: https://hydroweb.next.theia-land.fr.
+Then, carefully store your API-Key :
+- either in your eodag configuration file (usually `~/.config/eodag/eodag.yml`, automatically generated the first time you use eodag) in `auth/credentials/apikey="PLEASE_CHANGE_ME"`;
+- or in an environment variable `export EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY="PLEASE_CHANGE_ME"`.
 
 ## 🪄 *Converters* 
 The converter classes allow you to create more easy-to-use databases than the original netcdf4 format. The various databases are designed for **local** studies, not for huge country-scale databases (though it should work, they will not be efficient).  
