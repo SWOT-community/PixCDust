@@ -9,13 +9,13 @@ from tqdm import tqdm
 import fiona
 import geopandas as gpd
 
-from pixcdust.converters.core import PixCConverterWSE, GeoLayerH3Projecter
+from pixcdust.converters.core import ConverterWSE, GeoLayerH3Projecter
 from pixcdust.readers.netcdf import NcSimpleReader
 from pixcdust.readers.zarr import ZarrReader
 from pixcdust.readers.gpkg import GpkgReader
 
 
-class Nc2GpkgConverter(PixCConverterWSE):
+class Nc2GpkgConverter(ConverterWSE):
     """Converter from official SWOT Pixel Cloud Netcdf to a Geopackage database.
 
     Attributes:

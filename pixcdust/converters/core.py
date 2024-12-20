@@ -54,7 +54,7 @@ class Converter:
         raise NotImplementedError
 
 
-class PixCConverterWSE(Converter):
+class ConverterWSE(Converter):
     """Abstract class parent of pixcdust converters supporting water surface elevation computation.
 
     They convert from official SWOT Pixel Cloud Netcdf to the supported format.
