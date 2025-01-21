@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "swot-pixc-study"
+name = "pixcdust"
 version = "0.1.0"
 description = ""
 authors = ["zawadzl <lionel.zawadzki@cnes.fr>"]
