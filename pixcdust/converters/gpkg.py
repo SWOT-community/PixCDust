@@ -93,8 +93,7 @@ class GpkgH3Projecter:
 
     Attributes:
         path: Gpkg pixelcloud to convert.
-        variable: FIXME
-        h3_res: esolotion of the h3 projection.
+        h3_res: resolotion of the h3 projection.
         conditions: Optional limits on points converted.
         h3_layer_pattern: Postfix of output layers.
         path_out: Output path of the convertion.
@@ -102,7 +101,6 @@ class GpkgH3Projecter:
     """
 
     path: str
-    variable: str
     h3_res: int
     conditions: Optional[dict[str,dict[str, Union[str, float]]]] = None
     h3_layer_pattern: str = '_h3'
@@ -125,12 +123,9 @@ class GpkgH3Projecter:
             gdf = self.database.read_single_layer(layer)
             h3_gdf = self._compute_layer(gdf)
 
-            layername_out = f"{layer}_{self.variable}_\
-{self.h3_res}_{self.h3_layer_pattern}"
+            layername_out = f"{layer}_{self.h3_res}_{self.h3_layer_pattern}"
 
             h3_gdf.to_file(self.path_out, layer=layername_out, driver="GPKG")
-            # tqdm.write(layername_out)
-            # lancer write avec le bon nom
 
     def _compute_layer(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """Convert to an H3 projection a single layer.
@@ -143,7 +138,6 @@ class GpkgH3Projecter:
         """
         geolayer = GeoLayerH3Projecter(
             gdf,
-            self.variable,
             self.h3_res,
         )
         if self.conditions:

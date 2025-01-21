@@ -117,12 +117,10 @@ class GeoLayerH3Projecter:
 
     Attributes:
         data: data getting projected
-        variable: FIXME
         resolution: Resolution
 
     """
     data: gpd.GeoDataFrame
-    variable: str
     resolution: int
 
     def filter_variable(self, conditions: dict[str,dict[str, Union[str, float]]]) -> None:
@@ -177,5 +175,4 @@ class GeoLayerH3Projecter:
         self.data = h3_tools.gdf_to_h3_gdf(
             self.data,
             self.resolution,
-            self.variable,
         )
