@@ -229,13 +229,18 @@ class NcSimpleReader(BaseReader):
 
             self.__postprocess_points()
 
-    def to_h3(self, variables: str | list[str], resolution: int = 8, method: str = 'linear') -> xr.Dataset:
+    def to_h3(self,
+              variables: str | list[str] | None=None,
+              resolution: int = 8,
+              interp: bool=False,
+              method: str = 'linear') -> xr.Dataset:
         """
         Convert a Dataset with latitude and longitude coordinates into an H3-indexed grid.
 
         Args:
-            variables: The variables you want to convert into the H3 grid.
+            variables: The variables you want to convert into the H3 grid, all variables by default.
             resolution: The resolution of the H3 grid. Valid values are from 0 (coarse) to 15 (fine).
+            interp: True for interpolate data, could be more precise but take a lot of time, default is False.
             method: ('nearest', 'linear', 'cubic') The interpolation method used by`scippy.interpolate.griddata`.
 
         Returns:
@@ -243,18 +248,25 @@ class NcSimpleReader(BaseReader):
         """
         if isinstance(variables, str):
             data = self.to_xarray()[[variables]]
-        else:
+        elif isinstance(variables, list):
             data = self.to_xarray()[variables]
-        return prepare_dataset_h3(data, resolution=resolution, method=method)
+        else:
+            data = self.to_xarray()
+        return prepare_dataset_h3(data, resolution=resolution, interp=interp, method=method)
 
-    def to_healpix(self, variables: str | list[str], resolution: int = 8, nest=False, method: str = 'linear') -> xr.Dataset:
+    def to_healpix(self, variables: str | list[str] | None=None,
+                   resolution: int = 8,
+                   nest=False,
+                   interp: bool= False,
+                   method: str = 'linear') -> xr.Dataset:
         """
         Convert a Dataset with latitude and longitude coordinates into an HEALPix-indexed grid.
 
         Args:
-            variables: The variables you want to convert into the H3 grid.
+            variables: The variables you want to convert into the HEALpix grid, all by default.
             resolution: The resolution of the HEALPix grid.
-            nest: If True, uses the nested HEALPix ordering scheme. Otherwise, uses the ring ordering scheme (default)
+            nest: If True, uses the nested HEALPix ordering scheme. Otherwise, uses the ring ordering scheme (default).
+            interp: True for interpolate data, could be more precise but take a lot of time, default is False.
             method: ('nearest', 'linear', 'cubic') The interpolation method used by`scippy.interpolate.griddata`.
 
         Returns:
@@ -262,9 +274,11 @@ class NcSimpleReader(BaseReader):
         """
         if isinstance(variables, str):
             data = self.to_xarray()[[variables]]
-        else:
+        elif isinstance(variables, list):
             data = self.to_xarray()[variables]
-        return prepare_dataset_healpix(data, resolution=resolution, nest=nest, method=method)
+        else:
+            data = self.to_xarray()
+        return prepare_dataset_healpix(data, resolution=resolution, interp=interp, nest=nest, method=method)
 
     def __postprocess_points(self) -> None:
         """Adds a points coordinates containing shapely.Points (longitude, latitude)
@@ -342,3 +356,13 @@ class NcSimpleReader(BaseReader):
         ds[self.cst.default_added_time_name] = dt_time_start
 
         return ds
+
+
+if __name__ == "__main__":
+    import glob
+
+    swot_nc_files = glob.glob('/tmp/pixc' + '/*/*nc')
+    path = swot_nc_files[0]
+    reader = PixCNcSimpleReader(path)
+    reader.read()
+    reader.to_h3(variables='height', resolution=8)

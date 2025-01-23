@@ -24,7 +24,7 @@ import xdggs
 from scipy.interpolate import griddata
 
 
-def prepare_dataset_h3(ds: Dataset, resolution: int, method: str = 'linear') -> Dataset:
+def prepare_dataset_h3(ds: Dataset, resolution: int, interp: bool=False, method: str = 'linear') -> Dataset:
     """
     Convert a Dataset with latitude and longitude coordinates into an H3-indexed grid.
 
@@ -48,55 +48,71 @@ def prepare_dataset_h3(ds: Dataset, resolution: int, method: str = 'linear') -> 
     lon = ds.longitude
     lat = ds.latitude
 
-    # Compute the bounding box for the dataset in lat/lon
-    lon_min, lon_max = ds.longitude.min().values.item(), ds.longitude.max().values.item()
-    lat_min, lat_max = ds.latitude.min().values.item(), ds.latitude.max().values.item()
+    if interp:
+        # Compute the bounding box for the dataset in lat/lon
+        lon_min, lon_max = ds.longitude.min().values.item(), ds.longitude.max().values.item()
+        lat_min, lat_max = ds.latitude.min().values.item(), ds.latitude.max().values.item()
 
-    # Define the bounding box coordinates
-    bbox_coords = [
-        (lon_min, lat_min),
-        (lon_min, lat_max),
-        (lon_max, lat_max),
-        (lon_max, lat_min),
-        (lon_min, lat_min),
-    ]
+        # Define the bounding box coordinates
+        bbox_coords = [
+            (lon_min, lat_min),
+            (lon_min, lat_max),
+            (lon_max, lat_max),
+            (lon_max, lat_min),
+            (lon_min, lat_min),
+        ]
 
-    # H3 expects latitudes first, so reorder bbox coordinates
-    bbox_coords_lat_first = [(lat, lon) for lon, lat in bbox_coords]
+        # H3 expects latitudes first, so reorder bbox coordinates
+        bbox_coords_lat_first = [(lat, lon) for lon, lat in bbox_coords]
 
-    # Use polyfill to generate H3 indices within the bounding box
-    bbox_indexes = np.array(
-        list(h3.api.basic_int.polyfill_polygon(bbox_coords_lat_first, resolution))
-    )
+        # Use polyfill to generate H3 indices within the bounding box
+        h3_indices = np.array(
+            list(h3.api.basic_int.polyfill_polygon(bbox_coords_lat_first, resolution))
+        )
 
-    # Convert the H3 indices back to lat/lon coordinates
-    ll_points = np.array([h3.api.basic_int.h3_to_geo(i) for i in bbox_indexes])
+        # Convert the H3 indices back to lat/lon coordinates
+        ll_points = np.array([h3.api.basic_int.h3_to_geo(i) for i in h3_indices])
 
-    # Prepare the new H3-indexed coordinates
+        # Interpolate the dataset to the new H3 grid
+        # Interpolate for each data variable in the dataset
+        data = {}
+        for var in ds.data_vars:
+            # Retrieve the variable values and the corresponding coordinates
+            values = ds[var].values
+
+            # Interpolate the values onto the H3 grid
+            interpolated_values = griddata(
+                points=(lat, lon),
+                values=values,
+                xi=ll_points,
+                method=method
+            )
+            data[var] = interpolated_values
+
+    else:
+        # Compute H3 index for each point in the dataset
+        h3_indices = np.array([h3.api.basic_int.geo_to_h3(lat_, lon_, resolution) for lat_, lon_ in zip(lat.values, lon.values)])
+        h3_data = dict()
+        for h3_id in np.unique(h3_indices):
+            h3_data[h3_id] = []
+
+        ll_points = np.array([h3.api.basic_int.h3_to_geo(i) for i in np.unique(h3_indices)])
+
+        for var in ds.data_vars:
+            values = ds[var].values
+            for idx, h3_id in enumerate(h3_indices):
+                h3_data[h3_id].append(values[idx])
+
+        data = {var: np.array([np.mean(np.array(h3_data[h3_id])) for h3_id in h3_data]) for var in ds.data_vars}
+
     coords = {
-        "cell_ids": bbox_indexes,
+        "cell_ids": np.unique(h3_indices),
         'h3_lon': ('cell_ids', ll_points[:, 1]),
         'h3_lat': ('cell_ids', ll_points[:, 0])
     }
 
-    # Interpolate the dataset to the new H3 grid
-    # Interpolate for each data variable in the dataset
-    interpolated_data = {}
-    for var in ds.data_vars:
-        # Retrieve the variable values and the corresponding coordinates
-        values = ds[var].values
-
-        # Interpolate the values onto the H3 grid
-        interpolated_values = griddata(
-            points=(lat, lon),
-            values=values,
-            xi=ll_points,
-            method=method
-        )
-        interpolated_data[var] = interpolated_values
-
     ds_h3 = xr.Dataset(
-        {var: (('cell_ids',), interpolated_data[var]) for var in interpolated_data},
+        {var: (('cell_ids',), data[var]) for var in data},
         coords=coords,
         attrs=ds.attrs
     )
@@ -106,7 +122,7 @@ def prepare_dataset_h3(ds: Dataset, resolution: int, method: str = 'linear') -> 
     return ds_h3
 
 
-def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, nest: bool = False, method: str = 'linear') -> Dataset:
+def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, nest: bool = False, interp: bool=False, method: str = 'linear') -> Dataset:
     """
     Convert a Dataset with latitude and longitude coordinates into an HEALPix-indexed grid.
 
@@ -131,34 +147,48 @@ def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, nest: bool = False
     # Get HEALPix pixel centers
     lats = ds['latitude'].values
     lons = ds['longitude'].values
-    pix_indices = hp.ang2pix(nside, lons, lats, nest=nest, lonlat=True)
-    pix_indices = np.unique(pix_indices)
-    healpix_lon, healpix_lat = hp.pix2ang(nside, pix_indices, nest=nest, lonlat=True)
+    pix_indices = np.array(hp.ang2pix(nside, lons, lats, nest=nest, lonlat=True))
+    healpix_lon, healpix_lat = hp.pix2ang(nside, np.unique(pix_indices), nest=nest, lonlat=True)
 
-    interp_points = np.vstack((healpix_lon, healpix_lat)).T
+    if interp:
+        pix_indices = np.unique(pix_indices)
 
-    # Interpolate for each data variable in the dataset
-    interpolated_data = {}
-    for var in ds.data_vars:
-        # Retrieve the variable values and the corresponding coordinates
-        values = ds[var].values
+        interp_points = np.vstack((healpix_lon, healpix_lat)).T
 
-        # Interpolate the values onto the HEALPix grid
-        interpolated_values = griddata(
-            points=(lons, lats),
-            values=values,
-            xi=interp_points,
-            method=method
-        )
-        interpolated_data[var] = interpolated_values
+        # Interpolate for each data variable in the dataset
+        data = {}
+        for var in ds.data_vars:
+            # Retrieve the variable values and the corresponding coordinates
+            values = ds[var].values
+
+            # Interpolate the values onto the HEALPix grid
+            interpolated_values = griddata(
+                points=(lons, lats),
+                values=values,
+                xi=interp_points,
+                method=method
+            )
+            data[var] = interpolated_values
+
+    else:
+        healpix_data = dict()
+        for h3_id in np.unique(pix_indices):
+            healpix_data[h3_id] = []
+
+        for var in ds.data_vars:
+            values = ds[var].values
+            for idx, h3_id in enumerate(pix_indices):
+                healpix_data[h3_id].append(values[idx])
+
+        data = {var: np.array([np.mean(np.array(healpix_data[h3_id])) for h3_id in healpix_data]) for var in ds.data_vars}
 
     coords = {
-        'cell_ids': pix_indices,
+        'cell_ids': np.unique(pix_indices),
         'healpix_lon': ('cell_ids', healpix_lon),
         'healpix_lat': ('cell_ids', healpix_lat)
     }
     ds_healpix = xr.Dataset(
-        {var: (('cell_ids',), interpolated_data[var]) for var in interpolated_data},
+        {var: (('cell_ids',), data[var]) for var in data},
         coords=coords,
         attrs=ds.attrs
     )
