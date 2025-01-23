@@ -29,12 +29,14 @@ def prepare_dataset_h3(ds: Dataset, resolution: int, interp: bool=False, method:
     Convert a Dataset with latitude and longitude coordinates into an H3-indexed grid.
 
     This function computes H3 hexagonal grid indices for each latitude/longitude pair in the dataset,
-    applies the H3 indexing, and interpolates the data to the new H3 grid. It also fills a bounding
+    applies the H3 indexing, and projects the data to the new H3 grid. It also fills a bounding
     box with H3 indices and interpolates the dataset accordingly.
 
     Args:
         ds: The input dataset with latitude ('latitude') and longitude ('longitude') coordinates.
         resolution: The resolution of the H3 grid. Valid values are from 0 (coarse) to 15 (fine).
+        interp: If True, the data will be interpolated onto the H3 grid, which may be more precise but computationally expensive.
+                If False (default), values will be averaged per H3 cell.
         method: ('nearest', 'linear', 'cubic') The interpolation method used by`scippy.interpolate.griddata`.
 
     Returns:
@@ -92,17 +94,18 @@ def prepare_dataset_h3(ds: Dataset, resolution: int, interp: bool=False, method:
     else:
         # Compute H3 index for each point in the dataset
         h3_indices = np.array([h3.api.basic_int.geo_to_h3(lat_, lon_, resolution) for lat_, lon_ in zip(lat.values, lon.values)])
-        h3_data = dict()
-        for h3_id in np.unique(h3_indices):
-            h3_data[h3_id] = []
-
         ll_points = np.array([h3.api.basic_int.h3_to_geo(i) for i in np.unique(h3_indices)])
 
+        # Create a dictionary to store values by H3 cell
+        h3_data = {pix_id: [] for pix_id in np.unique(h3_indices)}
+
+        # For each data variable in the dataset, collect values within each H3 cell
         for var in ds.data_vars:
             values = ds[var].values
             for idx, h3_id in enumerate(h3_indices):
                 h3_data[h3_id].append(values[idx])
 
+        # Compute the mean value for each variable in each H3 cell
         data = {var: np.array([np.mean(np.array(h3_data[h3_id])) for h3_id in h3_data]) for var in ds.data_vars}
 
     coords = {
@@ -127,12 +130,14 @@ def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, nest: bool = False
     Convert a Dataset with latitude and longitude coordinates into an HEALPix-indexed grid.
 
     This function computes Healpix grid indices for each latitude/longitude pair in the dataset,
-    applies the HEALPix indexing, and interpolates the data to the new HEALPix grid.
+    applies the HEALPix indexing, and projects the data to the new HEALPix grid.
 
     Args:
         ds: The input dataset with latitude ('latitude') and longitude ('longitude') coordinates.
         resolution: The resolution of the HEALPix grid.
         nest: If True, uses the nested HEALPix ordering scheme. Otherwise, uses the ring ordering scheme (default)
+        interp: If True, the data will be interpolated onto the HEALPix grid, which may be more precise but computationally expensive.
+                If False (default), values will be averaged per HEALPix cell.
         method: ('nearest', 'linear', 'cubic') The interpolation method used by`scippy.interpolate.griddata`.
 
     Returns:
@@ -144,6 +149,7 @@ def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, nest: bool = False
         HEALPix grid.
     """
     nside = hp.order2nside(resolution)
+
     # Get HEALPix pixel centers
     lats = ds['latitude'].values
     lons = ds['longitude'].values
@@ -171,15 +177,16 @@ def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, nest: bool = False
             data[var] = interpolated_values
 
     else:
-        healpix_data = dict()
-        for h3_id in np.unique(pix_indices):
-            healpix_data[h3_id] = []
+        # Create a dictionary to store values by HEALPix cell
+        healpix_data = {pix_id: [] for pix_id in np.unique(pix_indices)}
 
+        # For each data variable in the dataset, collect values within each HEALPix cell
         for var in ds.data_vars:
             values = ds[var].values
             for idx, h3_id in enumerate(pix_indices):
                 healpix_data[h3_id].append(values[idx])
 
+        # Compute the mean value for each variable in each HEALPix cell
         data = {var: np.array([np.mean(np.array(healpix_data[h3_id])) for h3_id in healpix_data]) for var in ds.data_vars}
 
     coords = {
@@ -187,6 +194,8 @@ def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, nest: bool = False
         'healpix_lon': ('cell_ids', healpix_lon),
         'healpix_lat': ('cell_ids', healpix_lat)
     }
+
+    # Create the new dataset with the aggregated or interpolated data
     ds_healpix = xr.Dataset(
         {var: (('cell_ids',), data[var]) for var in data},
         coords=coords,
