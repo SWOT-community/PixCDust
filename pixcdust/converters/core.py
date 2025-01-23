@@ -1,3 +1,18 @@
+#
+# Copyright (C) 2024 Centre National d'Etudes Spatiales (CNES)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 """Interface used by all Pixcdust Converters."""
 
 import copy
@@ -10,7 +25,7 @@ from typing import Optional, Union, Iterable
 import geopandas as gpd
 
 
-class PixCConverter:
+class Converter:
     """Abstract class parent of pixcdust converters.
 
     They convert from official SWOT Pixel Cloud Netcdf to the supported format.
@@ -54,7 +69,7 @@ class PixCConverter:
         raise NotImplementedError
 
 
-class PixCConverterWSE(PixCConverter):
+class ConverterWSE(Converter):
     """Abstract class parent of pixcdust converters supporting water surface elevation computation.
 
     They convert from official SWOT Pixel Cloud Netcdf to the supported format.

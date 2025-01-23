@@ -1,3 +1,18 @@
+#
+# Copyright (C) 2024 Centre National d'Etudes Spatiales (CNES)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 """Geopackage converters."""
 
 import os
@@ -9,13 +24,13 @@ from tqdm import tqdm
 import fiona
 import geopandas as gpd
 
-from pixcdust.converters.core import PixCConverterWSE, GeoLayerH3Projecter
-from pixcdust.readers.netcdf import PixCNcSimpleReader
-from pixcdust.readers.zarr import PixCZarrReader
-from pixcdust.readers.gpkg import PixCGpkgReader
+from pixcdust.converters.core import ConverterWSE, GeoLayerH3Projecter
+from pixcdust.readers.netcdf import NcSimpleReader
+from pixcdust.readers.zarr import ZarrReader
+from pixcdust.readers.gpkg import GpkgReader
 
 
-class PixCNc2GpkgConverter(PixCConverterWSE):
+class Nc2GpkgConverter(ConverterWSE):
     """Converter from official SWOT Pixel Cloud Netcdf to a Geopackage database.
 
     Attributes:
@@ -31,7 +46,7 @@ class PixCNc2GpkgConverter(PixCConverterWSE):
         if compute_wse:
             self._append_wse_vars()
         for path in tqdm(self.path_in):
-            ncsimple = PixCNcSimpleReader(
+            ncsimple = NcSimpleReader(
                 path,
                 variables= self.variables,
                 area_of_interest=self.area_of_interest,
@@ -92,10 +107,10 @@ class GpkgH3Projecter:
     conditions: Optional[dict[str,dict[str, Union[str, float]]]] = None
     h3_layer_pattern: str = '_h3'
     path_out: Optional[str] = None
-    # database: PixCGpkgReader
+    # database: GpkgReader
 
     def __post_init__(self) -> None:
-        self.database = PixCGpkgReader(self.path)
+        self.database = GpkgReader(self.path)
         self.database.layers = [
             layer for layer in fiona.listlayers(self.path)
             if not layer.endswith(self.h3_layer_pattern)
@@ -139,7 +154,7 @@ class GpkgH3Projecter:
 
 
 @dataclass
-class PixCZarr2GpkgConverter:
+class Zarr2GpkgConverter:
     """Converter from Pixel Cloud zcollection to Geopackage database
     Attributes:
         path: Gpkg pixelcloud to convert.
@@ -148,7 +163,7 @@ class PixCZarr2GpkgConverter:
     data: gpd.GeoDataFrame = None
 
     def __post_init__(self) -> None:
-        self.__collection = PixCZarrReader(self.path)
+        self.__collection = ZarrReader(self.path)
         self.__collection.read()
 
     def convert(self, path_out: str) -> None:

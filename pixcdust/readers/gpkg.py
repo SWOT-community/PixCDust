@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
-
 """Converted Pixcdust GeoPackage Reader."""
 
 from pathlib import Path
@@ -29,7 +27,7 @@ import geopandas as gpd
 from pixcdust.readers.base_reader import BaseReader
 
 
-class PixCGpkgReader(BaseReader):
+class GpkgReader(BaseReader):
     """GeoPackage pixcdust database reader.
 
     Read a database from a GeoPackage file .

@@ -1,4 +1,73 @@
-*.pyc
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+__pycache__/
+*.so
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+pixc-env/
+# pipenv files
+Pipfile
+Pipfile.lock
+
+# Poetry files
 poetry.lock
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# PyCharm/IDEA
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Pytest
+.pytest_cache/
 conftest.json
-.idea
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db

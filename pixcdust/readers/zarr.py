@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
 """Converted Pixcdust zarr database Reader."""
 
 from typing import Optional, Tuple
@@ -25,7 +24,7 @@ import zcollection
 from pixcdust.readers.base_reader import BaseReader
 
 
-class PixCZarrReader(BaseReader):
+class ZarrReader(BaseReader):
     """Zarr pixcdust database reader.
 
     Read a database from a Zarr database (folder).
