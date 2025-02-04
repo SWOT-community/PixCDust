@@ -16,6 +16,8 @@
 
 import geopandas as gpd
 import h3
+import healpy as hp
+import numpy as np
 
 from shapely.geometry import Polygon
 
@@ -63,3 +65,56 @@ def gdf_to_h3_gdf(
     geometry = h3_df[h3_col].apply(h3_to_polygon)
 
     return gpd.GeoDataFrame(data=h3_df, geometry=geometry, crs=4326)
+
+def healpix_to_polygon(nside: int, pix: int):
+    # Get the boundaries of the HEALPix pixel in radians (theta, phi)
+    corners = hp.boundaries(nside, pix, step=1)
+    lon, lat = hp.vec2ang(np.transpose(corners), lonlat=True)
+
+    # Convert theta, phi boundaries to lat/lon in degrees
+    # lon, lat = np.degrees(boundaries[1]), np.degrees(boundaries[0])
+
+    # Create a polygon using the lat/lon values
+    return Polygon(zip(lon, lat))
+
+
+def get_healpix_res_name(res: int) -> str:
+    return "healpix_" + str(res).zfill(2)
+
+
+def gdf_to_healpix_gdf(
+    gdf: gpd.GeoDataFrame,
+    resolution: int,
+        ) -> gpd.GeoDataFrame:
+    """
+   Convert a GeoDataFrame with latitude and longitude columns to a GeoDataFrame
+   where rows are aggregated into H3 hexagons based on a given resolution.
+
+   Args:
+       gdf (gpd.GeoDataFrame): The input GeoDataFrame containing 'latitude' and 'longitude' columns.
+       resolution (int): The H3 resolution level for hexagon indexing.
+
+   Returns:
+       gpd.GeoDataFrame: A new GeoDataFrame where the rows are grouped by H3 hexagons,
+                         containing the mean of the grouped variables, and a geometry column with polygons
+                         representing the H3 hexagons.
+   """
+
+    nside = hp.order2nside(resolution)
+    # Get the column name for H3 index based on the resolution
+    healpix_col = get_healpix_res_name(resolution)
+
+    # Apply the Healpix function to each row to calculate the H3 index based on latitude, longitude, and resolution
+    gdf[healpix_col] = gdf.apply(lambda row: hp.ang2pix(nside, row['longitude'], row['latitude'], lonlat=True),
+                                axis=1)
+
+    # Drop the latitude, longitude, and geometry columns as they are no longer needed
+    healpix_df = gdf.drop(columns=['latitude', 'longitude', 'geometry'])
+
+    # Group by the Healpix index column, and compute the mean of all other columns in each group
+    healpix_df = healpix_df.groupby(healpix_col).mean().reset_index()
+
+    # Convert each Healpix index into a polygon geometry (hexagon) representing its boundaries
+    geometry = healpix_df[healpix_col].apply(lambda pix: healpix_to_polygon(nside, pix))
+
+    return gpd.GeoDataFrame(data=healpix_df, geometry=geometry, crs=4326)

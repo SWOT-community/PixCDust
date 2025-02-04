@@ -176,3 +176,11 @@ class GeoLayerH3Projecter:
             self.data,
             self.resolution,
         )
+
+    def compute_healpix_layer(self) -> None:
+        """Project data to Healpix."""
+        from pixcdust.dggs import h3_tools
+        self.data = h3_tools.gdf_to_healpix_gdf(
+            self.data,
+            self.resolution,
+        )
