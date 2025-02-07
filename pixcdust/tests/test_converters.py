@@ -2,13 +2,14 @@ import random
 from pathlib import PosixPath, Path
 from typing import List, Union
 
+import fiona
 import numpy as np
 import geopandas as gpd
 import pytest
 from shapely.geometry import Polygon
 import xarray as xr
 
-from pixcdust.converters.gpkg import Nc2GpkgConverter
+from pixcdust.converters.gpkg import Nc2GpkgConverter, GpkgDGGSProjecter
 from pixcdust.converters.shapefile import Nc2ShpConverter
 from pixcdust.converters.zarr import Nc2ZarrConverter
 from pixcdust.readers import GpkgReader
@@ -158,3 +159,54 @@ def test_convert_shape_limited_area(input_files, first_file, tmp_folder):
     # pixc_read = PixCZarrReader(output)
     # pixc_read.read()
     # validate_conversion(gpkg_read.data, converted_vars, zarr_read.data, False)
+
+
+# Test for GpkgDGGSProjecter
+def test_gpkg_dggs_projecter(converted_lim_gpkg, tmp_folder):
+    """Test the GpkgDGGSProjecter class by converting a sample Gpkg to a DGGS projection."""
+
+    input_gpkg = converted_lim_gpkg
+    # Define parameters
+    dggs_res = 10
+    healpix = False
+    dggs_layer_pattern = '_h3'
+    output_path = str(tmp_folder / "gpkg_dggs_output")
+
+    # Create an instance of GpkgDGGSProjecter
+    projecter = GpkgDGGSProjecter(
+        path=input_gpkg,
+        dggs_res=dggs_res,
+        healpix=healpix,
+        dggs_layer_pattern=dggs_layer_pattern,
+        path_out=output_path
+    )
+
+    # Validate initialization
+    assert projecter.path == input_gpkg
+    assert projecter.dggs_res == dggs_res
+    assert projecter.healpix == healpix
+    assert projecter.dggs_layer_pattern == dggs_layer_pattern
+    assert projecter.path_out == output_path
+
+    # Validate layers are correctly loaded
+    for layer in fiona.listlayers(input_gpkg):
+        if not layer.endswith(dggs_layer_pattern):
+            assert layer in projecter.database.layers
+
+    # Mock computation for a single layer and validate the conversion
+    projecter.compute_layers()
+
+    # Validate output file existence and content
+    for layer in projecter.database.layers:
+        layername_out = f"{layer}_{dggs_res}_{dggs_layer_pattern}"
+        # Check if the file was created with the right name
+        assert layername_out in fiona.listlayers(output_path)
+
+    # Test the same with HEALPix projection
+    projecter.healpix = True
+    projecter.compute_layers()
+
+    # Validate output for HEALPix
+    for layer in projecter.database.layers:
+        layername_out = f"{layer}_{dggs_res}_{dggs_layer_pattern}"
+        assert layername_out in fiona.listlayers(output_path)
