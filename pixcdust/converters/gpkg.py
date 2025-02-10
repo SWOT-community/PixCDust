@@ -88,24 +88,24 @@ class Nc2GpkgConverter(ConverterWSE):
 
 
 @dataclass
-class GpkgH3Projecter:
-    """Converter from a Gpkg pixelcloud to a Gpkg H3 projection.
+class GpkgDGGSProjecter:
+    """Converter from a Gpkg pixelcloud to a Gpkg DGGS projection.
 
     Attributes:
         path: Gpkg pixelcloud to convert.
-        variable: FIXME
-        h3_res: esolotion of the h3 projection.
+        dggs_res: resolotion of the dggs projection.
         conditions: Optional limits on points converted.
-        h3_layer_pattern: Postfix of output layers.
+        healpix: Projection either in healpix or h3 grid, default to h3 (False).
+        dggs_layer_pattern: Postfix of output layers.
         path_out: Output path of the convertion.
 
     """
 
     path: str
-    variable: str
-    h3_res: int
+    dggs_res: int
     conditions: Optional[dict[str,dict[str, Union[str, float]]]] = None
-    h3_layer_pattern: str = '_h3'
+    healpix: bool = False
+    dggs_layer_pattern: str = '_h3'
     path_out: Optional[str] = None
     # database: GpkgReader
 
@@ -113,7 +113,7 @@ class GpkgH3Projecter:
         self.database = GpkgReader(self.path)
         self.database.layers = [
             layer for layer in fiona.listlayers(self.path)
-            if not layer.endswith(self.h3_layer_pattern)
+            if not layer.endswith(self.dggs_layer_pattern)
             ]
 
         if self.path_out is None:
@@ -125,12 +125,9 @@ class GpkgH3Projecter:
             gdf = self.database.read_single_layer(layer)
             h3_gdf = self._compute_layer(gdf)
 
-            layername_out = f"{layer}_{self.variable}_\
-{self.h3_res}_{self.h3_layer_pattern}"
+            layername_out = f"{layer}_{self.dggs_res}_{self.dggs_layer_pattern}"
 
             h3_gdf.to_file(self.path_out, layer=layername_out, driver="GPKG")
-            # tqdm.write(layername_out)
-            # lancer write avec le bon nom
 
     def _compute_layer(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """Convert to an H3 projection a single layer.
@@ -143,12 +140,15 @@ class GpkgH3Projecter:
         """
         geolayer = GeoLayerH3Projecter(
             gdf,
-            self.variable,
-            self.h3_res,
+            self.dggs_res,
         )
         if self.conditions:
             geolayer.filter_variable(self.conditions)
-        geolayer.compute_h3_layer()
+
+        if self.healpix:
+            geolayer.compute_healpix_layer()
+        else:
+            geolayer.compute_h3_layer()
 
         return geolayer.data
 

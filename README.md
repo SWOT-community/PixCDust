@@ -37,7 +37,7 @@ Here are some python script implementing the classes.
 
 ## 🔶 *Discrete Global Grid System (experimental)*
 I enjoy DDGS a lot. It is pretty great if you want to perform on-the-fly "rasterization", partitionning, comparing pixels over time or space, etc.  
-Currently only H3 is implemented.  
+Currently H3 and HEALPix are implemented.  
 
 ## ✅ *Tests*
 You first need to configure the tests and download the tests data with init_tests.py. We recommend setting the following options:
