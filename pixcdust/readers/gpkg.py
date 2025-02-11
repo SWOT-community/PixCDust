@@ -13,45 +13,80 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
+"""Converted Pixcdust GeoPackage Reader."""
 
-
-from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional, List
 from tqdm import tqdm
 
 import fiona
+import xarray as xr
 import pandas as pd
 import geopandas as gpd
 
+from pixcdust.readers.base_reader import BaseReader
 
-@dataclass
-class PixCGpkgReader:
-    """Class to read geopackage database from path
+
+class GpkgReader(BaseReader):
+    """GeoPackage pixcdust database reader.
+
+    Read a database from a GeoPackage file .
+    You can then request a xr.Dataset, pd.DataFrame or gpd.GeoDataFrame
+    view of the database.
+
+    Attributes:
+        path: Path to read.
+        variables: Not supported.
+        area_of_interest: Optionally only read points in area_of_interest.
+        MULTI_FILE_SUPPORT: False, only support one file.
     """
-    path: str
-    layers: list[str] = None
-    area_of_interest: gpd.GeoDataFrame = None
-    data: gpd.GeoDataFrame = None
 
-    def __post_init__(self):
-        self.layers = fiona.listlayers(self.path)
-
-    def read_single_layer(self, layername: str) -> gpd.GeoDataFrame:
-        """reads a single layer of geopackage database
+    def __init__(self,
+                 path: str | Path,
+                 area_of_interest: Optional[gpd.GeoDataFrame] = None
+                 ):
+        """Gpkg pixcdust database reader configuration.
+        Read the list of layers from path.
 
         Args:
-            layername (str): name of the database, 
-            from list accessible with self.layers
+            path: Path of the file to read.
+            area_of_interest: Optionally only read points in area_of_interest.
+        """
+        super().__init__(path, area_of_interest=area_of_interest)
+        self._gdf_data: Optional[gpd.GeoDataFrame] = None
+        self.layers: list[str]  = fiona.listlayers(self.path)
+
+    @property
+    def data(self) ->  xr.Dataset:
+        return self._gdf_data.to_xarray()
+
+    @data.setter
+    def data(self, obj: xr.Dataset) -> None:
+        raise NotImplementedError("PixCGpkgReader internal data representation is a GeoDataFrame.")
+
+
+    def to_geodataframe(
+        self,
+    ) -> gpd.GeoDataFrame:
+        return self._gdf_data
+
+    def read_single_layer(self, layer: str) -> gpd.GeoDataFrame:
+        """Read and return a single layer of geopackage database.
+
+        Don't load the read data into the class (can't be then converted by the reader).
+        Use read for more advanced usage.
+
+        Args:
+            layer : name of the geodataframe layer to read. Must be in self.layers
 
         Returns:
-            gpd.GeoDataFrame: geodataframe containing data read from layer
+            Geodataframe containing data read from layer
         """
         layer_data = gpd.read_file(
             self.path,
             engine="pyogrio",
             use_arrow=True,
-            layer=layername,
+            layer=layer,
         )
 
         if self.area_of_interest is not None:
@@ -64,15 +99,16 @@ class PixCGpkgReader:
 
         return layer_data
 
-    def read(self, layers: Optional[List[str]] | None = None):
-        """reads all layers, or subset of layers, from geopackage database
+    def read(self, layers: Optional[List[str]] = None) -> None:
+        """Load all layers, or subset of layers, from geopackage database.
+        You can then access from data or with methods like
+        to_xarray, to_dataframe or to_geodataframe.
 
         Args:
-            layers (Optional[List[str]] | None, optional): \
-                list of layers accessible with self.layers. Defaults to None.
+            layers: Optional list of layers to load. Default to all.
         """
 
-        self.data = None
+        self._gdf_data = None
 
         if layers is None:
             layers = self.layers
@@ -83,11 +119,11 @@ class PixCGpkgReader:
                 layer,
             )
 
-            if self.data is None:
-                self.data = layer_data
+            if self._gdf_data is None:
+                self._gdf_data = layer_data
             else:
-                self.data = gpd.GeoDataFrame(
-                    pd.concat([self.data, layer_data], ignore_index=True)
+                self._gdf_data = gpd.GeoDataFrame(
+                    pd.concat([self._gdf_data, layer_data], ignore_index=True)
                 )
 
             del layer_data

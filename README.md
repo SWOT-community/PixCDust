@@ -18,7 +18,10 @@ Start here to understand what you can do: "There is nothing more frustrating tha
 
 ## ⬇️ *Downloaders* 
 The downloader classes allow you to directly download SWOT Pixel Cloud files from hydroweb.next (or other sources such as PO.DAAC to be implemented).  
-For hydroweb.next, it requires you to create an account and an API Key (token) from the platform: https://hydroweb.next.theia-land.fr
+For hydroweb.next, it requires you to create an account and an API Key (token) from the platform: https://hydroweb.next.theia-land.fr.
+Then, carefully store your API-Key :
+- either in your eodag configuration file (usually `~/.config/eodag/eodag.yml`, automatically generated the first time you use eodag) in `auth/credentials/apikey="PLEASE_CHANGE_ME"`;
+- or in an environment variable `export EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY="PLEASE_CHANGE_ME"`.
 
 ## 🪄 *Converters* 
 The converter classes allow you to create more easy-to-use databases than the original netcdf4 format. The various databases are designed for **local** studies, not for huge country-scale databases (though it should work, they will not be efficient).  
@@ -34,4 +37,21 @@ Here are some python script implementing the classes.
 
 ## 🔶 *Discrete Global Grid System (experimental)*
 I enjoy DDGS a lot. It is pretty great if you want to perform on-the-fly "rasterization", partitionning, comparing pixels over time or space, etc.  
-Currently only H3 is implemented.  
+Currently H3 and HEALPix are implemented.  
+
+## ✅ *Tests*
+You first need to configure the tests and download the tests data with init_tests.py. We recommend setting the following options:
+- INPUT_FOLDER is where the tests data will be downloaded (or are already available).
+- HYDROWEB_AUTH is your hydroweb.next API key. It is required to automatically download the tests data or run the downloaders tests.
+```
+python tests/init_tests.py -I INPUT_FOLDER -H HYDROWEB_AUTH
+```
+
+You then can run the converters tests:
+```
+pytest
+```
+You can also run all the tests including the downloaders tests with:
+```
+pytest --dl
+```

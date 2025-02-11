@@ -13,9 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#
 
+"""Readers for SWOT Pixel Cloud.
+They support the Netcdf official format and converted Zarr or Geopackage database.
+"""
 
-from pixcdust.readers.netcdf import PixCNcSimpleReader
-from pixcdust.readers.gpkg import PixCGpkgReader
-from pixcdust.readers.zarr import PixCZarrReader
+from pixcdust.readers.netcdf import NcSimpleReader
+from pixcdust.readers.gpkg import GpkgReader
+from pixcdust.readers.zarr import ZarrReader
