@@ -37,6 +37,11 @@ class Nc2GpkgConverter(ConverterWSE):
         path_in: List of path of files to convert.
         variables: Optionally only read these variables.
         area_of_interest: Optionally only read points in area_of_interest.
+        conditions: Optionally pass conditions to filter variables.\
+                    Example: {\
+                    "sig0":{'operator': "ge", 'threshold': 20},\
+                    "classification":{'operator': "ge", 'threshold': 3},\
+                    }
 
     """
 
@@ -50,6 +55,7 @@ class Nc2GpkgConverter(ConverterWSE):
                 path,
                 variables= self.variables,
                 area_of_interest=self.area_of_interest,
+                conditions=self.conditions,
             )
 
             # computing layer_name

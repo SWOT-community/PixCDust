@@ -43,6 +43,11 @@ class Nc2ZarrConverter(Converter):
         path_in: List of path of files to convert.
         variables: Optionally only read these variables.
         area_of_interest: Optionally only read points in area_of_interest.
+        conditions: Optionally pass conditions to filter variables.\
+                    Example: {\
+                    "sig0":{'operator': "ge", 'threshold': 20},\
+                    "classification":{'operator': "ge", 'threshold': 3},\
+                    }
     """
 
     def __init__(
@@ -50,6 +55,7 @@ class Nc2ZarrConverter(Converter):
         path_in: str | Iterable[str] | Path | Iterable[Path],
         variables: Optional[list[str]] = None,
         area_of_interest: Optional[gpd.GeoDataFrame] = None,
+        conditions: Optional[dict[str, dict[str, Union[str, float]]]] = None,
     ):
         """Basic initialisation of a pixcdust converter.
 
@@ -59,10 +65,16 @@ class Nc2ZarrConverter(Converter):
             path_in: Path or list of path of file(s) to convert.
             variables: Optionally only read these variables.
             area_of_interest: Optionally only read points in area_of_interest.
+            conditions: Optionally pass conditions to filter variables.\
+                    Example: {\
+                    "sig0":{'operator': "ge", 'threshold': 20},\
+                    "classification":{'operator': "ge", 'threshold': 3},\
+                    }
         """
         super().__init__(path_in=path_in,
                          variables=variables,
-                         area_of_interest=area_of_interest)
+                         area_of_interest=area_of_interest,
+                         conditions=conditions)
         self.collection: zcollection.collection.Collection = None
         self.__time_varname: str = TIME_VARNAME
         self.__fs = fsspec.filesystem("file")
@@ -78,9 +90,10 @@ class Nc2ZarrConverter(Converter):
                 dask.distributed.Client(cluster) as client:
 
             xr_ds = NcSimpleReader(
-                self.path_in,
-                self.variables,
-                self.area_of_interest,
+                path=self.path_in,
+                variables=self.variables,
+                area_of_interest=self.area_of_interest,
+                conditions=self.conditions
             )
 
             xr_ds.open_mfdataset(
