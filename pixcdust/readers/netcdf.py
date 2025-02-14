@@ -314,7 +314,6 @@ class NcSimpleReader(BaseReader):
 
     def to_healpix(self, variables: str | list[str] | None=None,
                    resolution: int = 8,
-                   nest=False,
                    interp: bool= False,
                    method: str = 'linear') -> xr.Dataset:
         """
@@ -323,7 +322,6 @@ class NcSimpleReader(BaseReader):
         Args:
             variables: The variables you want to convert into the HEALpix grid, all by default.
             resolution: The resolution of the HEALPix grid.
-            nest: If True, uses the nested HEALPix ordering scheme. Otherwise, uses the ring ordering scheme (default).
             interp: True for interpolate data, could be more precise but take a lot of time, default is False.
             method: ('nearest', 'linear', 'cubic') The interpolation method used by`scippy.interpolate.griddata`.
 
@@ -336,7 +334,7 @@ class NcSimpleReader(BaseReader):
             data = self.to_xarray()[variables]
         else:
             data = self.to_xarray()
-        return prepare_dataset_healpix(data, resolution=resolution, interp=interp, nest=nest, method=method)
+        return prepare_dataset_healpix(data, resolution=resolution, interp=interp, method=method)
 
     def __postprocess_points(self) -> None:
         """Adds a points coordinates containing shapely.Points (longitude, latitude)
