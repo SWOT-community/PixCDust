@@ -34,6 +34,19 @@ decorator = "^5.1.1"
 ipykernel = "^6.29.4"
 matplotlib = "^3.9.0"
 
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "*"
+sphinx-rtd-theme = "*"
+pydata-sphinx-theme = "*"
+sphinx-autodoc-typehints = "*"
+nbsphinx = "*"
+sphinx-autoapi = "*"
+ipykernel = "*"
+sphinx-collections = "*"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
