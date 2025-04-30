@@ -18,7 +18,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple, Optional, Iterable
+from typing import Tuple, Optional, Iterable, Union
 
 import numpy as np
 
@@ -27,6 +27,8 @@ import xvec  # noqa  # pylint: disable=unused-import
 
 import xarray as xr
 import geopandas as gpd
+import operator
+import dask.array as da
 
 from pixcdust.dggs.dggs_converter import prepare_dataset_h3, prepare_dataset_healpix
 from pixcdust.readers.base_reader import BaseReader
@@ -82,6 +84,11 @@ class NcSimpleReader(BaseReader):
         variables: Optionally only read these variables.
         area_of_interest: Optionally only read points in area_of_interest.
         MULTI_FILE_SUPPORT: True, this class can read multiple netcdf.
+        conditions: Optionally pass conditions to filter variables.\
+                    Example: {\
+                    "sig0":{'operator': "ge", 'threshold': 20},\
+                    "classification":{'operator': "ge", 'threshold': 3},\
+                    }
     """
     MULTI_FILE_SUPPORT = True
 
@@ -89,7 +96,8 @@ class NcSimpleReader(BaseReader):
                  path: str | Iterable[str] | Path | Iterable[Path],
                  variables: Optional[list[str]] = None,
                  area_of_interest: Optional[gpd.GeoDataFrame] = None,
-                 format_cfg : Optional[NcFormatCfg] = None
+                 format_cfg : Optional[NcFormatCfg] = None,
+                 conditions:  Optional[dict[str, dict[str, Union[str, float]]]] = None,
                  ):
         """Netcdf pixcdust reader configuration.
 
@@ -99,6 +107,11 @@ class NcSimpleReader(BaseReader):
             area_of_interest: Optionally only read points in area_of_interest.
             format_cfg: Optional. Config describing the netcdf structure.
                 Default to current SWOT Pixel Cloud.
+            conditions: Optionally pass conditions to filter variables.\
+                    Example: {\
+                    "sig0":{'operator': "ge", 'threshold': 20},\
+                    "classification":{'operator': "ge", 'threshold': 3},\
+                    }
         """
         super().__init__(path, area_of_interest=area_of_interest, variables=variables)
         if not format_cfg:
@@ -106,6 +119,7 @@ class NcSimpleReader(BaseReader):
         self.forbidden_variables = format_cfg.forbidden_variables
         self.trusted_group = format_cfg.trusted_group
         self.cst = format_cfg.constants
+        self.conditions = conditions
 
     @staticmethod
     def extract_info_from_nc_attrs(filename: str) -> Tuple[str, datetime, int, int, int, str]:
@@ -144,6 +158,44 @@ class NcSimpleReader(BaseReader):
             swath_side,
         )
 
+    def filter_variable(self) -> None:
+        """Filters xarray dataset based on operator and threshold on specific variables.
+
+        Raises:
+            IOError: If the variable provided in conditions is not in the dataset.
+            ValueError: If 'operator' or 'threshold' keys are not in conditions.
+            AttributeError: If operator is not the function name of the operator module.
+        """
+        _k_operator = 'operator'
+        _k_to = 'threshold'
+
+        # Loop through each condition and apply the filter
+        for var, condition in self.conditions.items():
+            if var not in self.data.variables:
+                raise IOError(
+                    f"Variable '{var}' not found in dataset variables (available: {list(self.data.variables)})"
+                )
+
+            # Ensure the condition dictionary has the correct keys
+            if _k_operator not in condition or _k_to not in condition:
+                raise ValueError(f"Condition for variable '{var}' must include '{_k_operator}' and '{_k_to}'")
+
+            # Get the operator function dynamically from the operator module
+            try:
+                operator_func = getattr(operator, condition[_k_operator])
+            except AttributeError:
+                raise AttributeError(
+                    f"Operator '{condition[_k_operator]}' is not a valid operator in the operator module")
+
+            threshold = condition[_k_to]
+
+            # Compute the boolean condition if it's a Dask array
+            if isinstance(self.data[var].data, da.Array):
+                self.data[var] = self.data[var].compute()
+
+            # Apply the filter using .where() on the dataset
+            self.data = self.data.where(operator_func(self.data[var], threshold), drop=True)
+
     def read(self, orbit_info: bool = False) -> None:
         """ Load self.path file(s).
         You can then access from data or with methods like
@@ -171,6 +223,9 @@ class NcSimpleReader(BaseReader):
         )
         if self.variables:
             self.data = self.data[self.variables]
+
+        if self.conditions:
+            self.filter_variable()
 
         self.__postprocess_points()
 
@@ -227,6 +282,9 @@ class NcSimpleReader(BaseReader):
                 )
             self.data = self.data[self.variables]
 
+            if self.conditions:
+                self.filter_variable()
+
             self.__postprocess_points()
 
     def to_h3(self,
@@ -256,7 +314,6 @@ class NcSimpleReader(BaseReader):
 
     def to_healpix(self, variables: str | list[str] | None=None,
                    resolution: int = 8,
-                   nest=False,
                    interp: bool= False,
                    method: str = 'linear') -> xr.Dataset:
         """
@@ -265,7 +322,6 @@ class NcSimpleReader(BaseReader):
         Args:
             variables: The variables you want to convert into the HEALpix grid, all by default.
             resolution: The resolution of the HEALPix grid.
-            nest: If True, uses the nested HEALPix ordering scheme. Otherwise, uses the ring ordering scheme (default).
             interp: True for interpolate data, could be more precise but take a lot of time, default is False.
             method: ('nearest', 'linear', 'cubic') The interpolation method used by`scippy.interpolate.griddata`.
 
@@ -278,7 +334,7 @@ class NcSimpleReader(BaseReader):
             data = self.to_xarray()[variables]
         else:
             data = self.to_xarray()
-        return prepare_dataset_healpix(data, resolution=resolution, interp=interp, nest=nest, method=method)
+        return prepare_dataset_healpix(data, resolution=resolution, interp=interp, method=method)
 
     def __postprocess_points(self) -> None:
         """Adds a points coordinates containing shapely.Points (longitude, latitude)
@@ -356,13 +412,3 @@ class NcSimpleReader(BaseReader):
         ds[self.cst.default_added_time_name] = dt_time_start
 
         return ds
-
-
-if __name__ == "__main__":
-    import glob
-
-    swot_nc_files = glob.glob('/tmp/pixc' + '/*/*nc')
-    path = swot_nc_files[0]
-    reader = PixCNcSimpleReader(path)
-    reader.read()
-    reader.to_h3(variables='height', resolution=8)
