@@ -80,10 +80,15 @@ Copyright (c) 2024, Uber Technologies, Inc.
 Website: https://h3geo.org/
 License: Apache License 2.0.
 
-Healpy: Python package to manipulate HEALPix maps.
-Copyright (c) CC/BY/4.0/International.
-Website: https://healpy.readthedocs.io/
-License: GPL 2.0 License.
+Astropy: Astronomy and astrophysics core library.
+Copyright (c) 2011-2024, Astropy Developers.
+Website: https://www.astropy.org/
+License: BSD 3-Clause License.
+
+Astropy-healpix: HEALPix grid and pixelization library.
+Copyright (c) 2025, Astropy Developers.
+Website: https://astropy-healpix.readthedocs.io/en/latest/
+License: BSD 3-Clause License.
 
 Xdggs: Library for handling DGGS grids in Python.
 Copyright (c) 2023-2024 Xdggs Developers.

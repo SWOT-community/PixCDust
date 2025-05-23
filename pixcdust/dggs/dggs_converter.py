@@ -16,12 +16,13 @@
 #
 
 import h3
-import healpy as hp
 import numpy as np
 import xarray as xr
 from xarray import Dataset
 import xdggs
 from scipy.interpolate import griddata
+from astropy_healpix import HEALPix
+from astropy import units as u
 
 
 def prepare_dataset_h3(ds: Dataset, resolution: int, interp: bool=False, method: str = 'linear') -> Dataset:
@@ -125,7 +126,7 @@ def prepare_dataset_h3(ds: Dataset, resolution: int, interp: bool=False, method:
     return ds_h3
 
 
-def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, nest: bool = False, interp: bool=False, method: str = 'linear') -> Dataset:
+def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, interp: bool=False, method: str = 'linear') -> Dataset:
     """
     Convert a Dataset with latitude and longitude coordinates into an HEALPix-indexed grid.
 
@@ -135,7 +136,6 @@ def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, nest: bool = False
     Args:
         ds: The input dataset with latitude ('latitude') and longitude ('longitude') coordinates.
         resolution: The resolution of the HEALPix grid.
-        nest: If True, uses the nested HEALPix ordering scheme. Otherwise, uses the ring ordering scheme (default)
         interp: If True, the data will be interpolated onto the HEALPix grid, which may be more precise but computationally expensive.
                 If False (default), values will be averaged per HEALPix cell.
         method: ('nearest', 'linear', 'cubic') The interpolation method used by`scippy.interpolate.griddata`.
@@ -148,13 +148,22 @@ def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, nest: bool = False
         The dataset retains any global attributes from the original dataset and stores additional metadata on the
         HEALPix grid.
     """
-    nside = hp.order2nside(resolution)
+    nside = 2**resolution
+
+    # Init healpix grid
+    healpix = HEALPix(nside=nside, order="nested")
 
     # Get HEALPix pixel centers
     lats = ds['latitude'].values
     lons = ds['longitude'].values
-    pix_indices = np.array(hp.ang2pix(nside, lons, lats, nest=nest, lonlat=True))
-    healpix_lon, healpix_lat = hp.pix2ang(nside, np.unique(pix_indices), nest=nest, lonlat=True)
+    # pix_indices = np.array(hp.ang2pix(nside, lons, lats, nest=nest, lonlat=True))
+    # healpix_lon, healpix_lat = hp.pix2ang(nside, np.unique(pix_indices), nest=nest, lonlat=True)
+    pix_indices = healpix.lonlat_to_healpix(lons * u.deg, lats * u.deg)
+    healpix_lon, healpix_lat = healpix.healpix_to_lonlat(np.unique(pix_indices))
+
+    # Convert the results to degrees
+    healpix_lon = healpix_lon.deg
+    healpix_lat = healpix_lat.deg
 
     if interp:
         pix_indices = np.unique(pix_indices)
@@ -205,7 +214,7 @@ def prepare_dataset_healpix(ds: Dataset, resolution: int = 8, nest: bool = False
     ds_healpix.cell_ids.attrs = {
         "grid_name": "healpix",
         "nside": nside,
-        "nest": nest,
+        "nest": True,
     }
     if "cell_ids" in ds_healpix.indexes:
         ds_healpix = ds_healpix.reset_index("cell_ids")

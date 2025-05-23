@@ -21,6 +21,41 @@ LIM_AREA_POL = Polygon(
 LIM_AREA_GEOM = gpd.GeoDataFrame(index=[0], crs='epsg:4326', geometry=[LIM_AREA_POL])
 """Geometry used as area of interest of limited area tests."""
 
+
+def test_nc_simple_reader_conditions(input_files):
+    """Test NcSimpleReader with conditions on variables."""
+    # Define conditions
+    conditions = {"classification": {'operator': "ge", 'threshold': 4}, # classification >= 4
+                  "classification": {'operator': "le", 'threshold': 3}, # classification <= 3
+                  "sig0": {'operator': "gt", 'threshold': 15} # sig0 > 15
+                  }
+
+    converted_vars = ['height', 'sig0', 'classification']
+
+    # Instantiate the NcSimpleReader with conditions
+    reader = NcSimpleReader(
+        input_files,
+        variables=converted_vars,
+        conditions=conditions,
+    )
+
+    # Read the dataset and apply filtering
+    reader.read()
+
+    # Validate the data after filtering
+    for var, condition in conditions.items():
+        op = condition.get("operator")
+        val = condition.get("threshold")
+        if op == 'ge':
+            assert (reader.data[var] >= val).all(), f"{var} not >= {val}"
+        elif op == 'le':
+            assert (reader.data[var] <= val).all(), f"{var} not <= {val}"
+        elif op == 'gt':
+            assert (reader.data[var] > val).all(), f"{var} not > {val}"
+        elif op == 'lt':
+            assert (reader.data[var] < val).all(), f"{var} not < {val}"
+
+
 def validate_conversion_to_nc(read_data: xr.Dataset, converted_vars:List[str], first_file: Union[str, Path])\
         -> None:
     """Compare the start of a converted database to the first original netcdf file.

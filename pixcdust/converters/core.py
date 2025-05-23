@@ -34,6 +34,11 @@ class Converter:
         path_in: List of path of files to convert.
         variables: Optionally only read these variables.
         area_of_interest: Optionally only read points in area_of_interest.
+        conditions: Optionally pass conditions to filter variables.\
+                    Example: {\
+                    "sig0":{'operator': "ge", 'threshold': 20},\
+                    "classification":{'operator': "ge", 'threshold': 3},\
+                    }
     """
 
     def __init__(
@@ -41,6 +46,7 @@ class Converter:
         path_in: str | Iterable[str] | Path | Iterable[Path],
         variables: Optional[list[str]] = None,
         area_of_interest: Optional[gpd.GeoDataFrame] = None,
+        conditions: Optional[dict[str, dict[str, Union[str, float]]]] = None,
     ):
         """Basic initialisation of a pixcdust converter.
 
@@ -51,6 +57,11 @@ class Converter:
             variables: Optionally only read these variables.
             area_of_interest: Optionally only read points in area_of_interest.
             compute_wse:  toggle water surface elevation computation.
+            conditions: Optionally pass conditions to filter variables.\
+                    Example: {\
+                    "sig0":{'operator': "ge", 'threshold': 20},\
+                    "classification":{'operator': "ge", 'threshold': 3},\
+                    }
         """
         if isinstance(path_in, str | Path):
             self.path_in = [str(path_in)]
@@ -59,6 +70,7 @@ class Converter:
 
         self.variables = copy.copy(variables)
         self.area_of_interest = area_of_interest
+        self.conditions = conditions
 
     def database_from_nc(self, path_out: str | Path, mode: str = "w") -> None:
         """Convert the path_in files to path_out.
@@ -130,7 +142,7 @@ class GeoLayerH3Projecter:
         Args:
             conditions (dict): specifies the filters. \
                 Example: {\
-                    "sig0":{'operator': "ge", 'treshold': 20},\
+                    "sig0":{'operator': "ge", 'threshold': 20},\
                     "classification":{'operator': "ge", 'threshold': 3},\
                     }
 

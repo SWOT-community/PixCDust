@@ -57,12 +57,18 @@ class BaseReader:
         variables: Optionally only read these variables.
         area_of_interest: Optionally only read points in area_of_interest.
         MULTI_FILE_SUPPORT: Static variable describing if the class support opening a list of path.
+        conditions: Optionally pass conditions to filter variables.\
+                    Example: {\
+                    "sig0":{'operator': "ge", 'threshold': 20},\
+                    "classification":{'operator': "ge", 'threshold': 3},\
+                    }
     """
     MULTI_FILE_SUPPORT=False
     def __init__(self,
                  path: str | Iterable[str] | Path | Iterable[Path],
                  variables: Optional[list[str]] = None,
-                 area_of_interest: Optional[gpd.GeoDataFrame] = None
+                 area_of_interest: Optional[gpd.GeoDataFrame] = None,
+                 conditions:  Optional[dict[str, dict[str, Union[str, float]]]] = None,
                  ):
         """Basic pixcdust database reader configuration.
 
@@ -70,6 +76,11 @@ class BaseReader:
             path: Path or list of path to read.
             variables: Optionally only read these variables.
             area_of_interest: Optionally only read points in area_of_interest.
+            conditions: Optionally pass conditions to filter variables.\
+                    Example: {\
+                    "sig0":{'operator': "ge", 'threshold': 20},\
+                    "classification":{'operator': "ge", 'threshold': 3},\
+                    }
         """
         if isinstance(path, str | Path):
             self.path:  str | Iterable[str] = str(path)
@@ -83,6 +94,7 @@ class BaseReader:
         self.area_of_interest = area_of_interest
         self._data: Optional[xr.Dataset] = None
         self.variables = variables
+        self.conditions = conditions
 
     @property
     def data(self) ->  xr.Dataset:

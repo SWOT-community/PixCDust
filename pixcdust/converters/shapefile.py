@@ -31,6 +31,11 @@ class Nc2ShpConverter(Converter):
         path_in: List of path of files to convert.
         variables: Optionally only read these variables.
         area_of_interest: Optionally only read points in area_of_interest.
+        conditions: Optionally pass conditions to filter variables.\
+                    Example: {\
+                    "sig0":{'operator': "ge", 'threshold': 20},\
+                    "classification":{'operator': "ge", 'threshold': 3},\
+                    }
     """
 
     def database_from_nc(self, path_out: str | Path, mode: str = "w") -> None:
@@ -41,11 +46,13 @@ class Nc2ShpConverter(Converter):
             pass
         for path in tqdm(self.path_in):
             ncsimple = NcSimpleReader(path,
-                                          variables=self.variables,
-                                          area_of_interest=self.area_of_interest)
+                                      variables=self.variables,
+                                      area_of_interest=self.area_of_interest,
+                                      conditions=self.conditions,
+                                      )
 
             filename_out = os.path.splitext(os.path.basename(path))[0]
-            path_shp = os.path.join(path_out, filename_out + '.shp',)
+            path_shp = os.path.join(path_out, filename_out + '.shp', )
             # cheking if output file and layer already exist
             if os.path.exists(path_shp) and mode == "w":
                 continue
