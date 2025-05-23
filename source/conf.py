@@ -31,11 +31,26 @@ source_suffix = ['.rst']
 html_theme = 'alabaster'
 html_static_path = ['_static']
 
+
+# manual build path
 collections = {
     'notebooks': {
         'driver': 'copy_folder',
         'source': 'pixcdust/notebooks',
         'target': 'notebooks/',
         'ignore': ['*.py', '.sh'],
+        'safe': False,
+    }
+}
+
+# ReadTheDoc build path
+
+collections = {
+    'notebooks': {
+        'driver': 'copy_folder',
+        'source': '../pixcdust/notebooks',
+        'target': 'notebooks/',
+        'ignore': ['*.py', '.sh'],
+        'safe': False,
     }
 }
