@@ -16,7 +16,7 @@ This python project centralizes librairies to facilitate local studies based on 
 This project is available with pip and conda-forge. You can install it with either
 
   * pip: ``pip install pixcdust``
-  * conda: ``conda install pixcdust``
+  * conda: ``conda install -c conda-forge pixcdust``
 
 🚀 Manual Installation
 ----------------------

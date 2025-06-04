@@ -2,17 +2,20 @@
 
 This python project centralizes librairies to facilitate local studies based on SWOT-HR Level-2 Pixel Cloud products.
 
-# 🚀 Quick Start 
-start by cloning  this package and installing the environment with  
-pip: 
-```
-pip install -e .
-```
+🚀 Quick Start
+--------------
+This project is available with pip and conda-forge. You can install it with either
 
-poetry:
-```
-poetry install
-```
+  * pip: ``pip install pixcdust``
+  * conda: ``conda install -c conda-forge pixcdust``
+
+🚀 Manual Installation
+----------------------
+
+Start by cloning this package and installing the environment with either
+  * pip: ``pip install -e .``
+  * poetry: ``poetry install``
+
 ## 📔 *Notebooks* 
 Start here to understand what you can do: "There is nothing more frustrating than a good example" (Mark Twain)
 
