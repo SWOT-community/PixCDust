@@ -9,6 +9,7 @@ packages = [{include = "pixcdust"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 numpy = "^1.26.4"
+scipy = "^1.8.0"
 fiona = "^1.9.5"
 pandas = "^2.2.0"
 geopandas = "^0.14.3"
