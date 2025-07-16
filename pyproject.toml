@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pixcdust"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["zawadzl <lionel.zawadzki@cnes.fr>"]
 readme = "README.md"
