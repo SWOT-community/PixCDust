@@ -15,13 +15,22 @@ from pixcdust.readers import GpkgReader
 from pixcdust.readers.netcdf import NcSimpleReader
 from pixcdust.readers.zarr import ZarrReader
 
+#LIM_AREA_POL = Polygon(
+#    [
+#        (-1.50580, 43.39543),
+#        (-1.36597, 43.39543),
+#        (-1.36597, 43.56471),
+#        (-1.50580, 43.56471),
+#        (-1.50580, 43.39543),
+#    ]
+#)
 LIM_AREA_POL = Polygon(
     [
-        (-1.50580, 43.39543),
-        (-1.36597, 43.39543),
-        (-1.36597, 43.56471),
-        (-1.50580, 43.56471),
-        (-1.50580, 43.39543),
+        (-52.90580, 4.49543),
+        (-52.76597, 4.49543),
+        (-52.76597, 4.66471),
+        (-52.90580, 4.66471),
+        (-52.90580, 4.49543),
     ]
 )
 LIM_AREA_GEOM = gpd.GeoDataFrame(index=[0], crs="epsg:4326", geometry=[LIM_AREA_POL])
@@ -77,7 +86,7 @@ def validate_conversion_to_nc(
     """
     ncsimple = NcSimpleReader(str(first_file))
     ncsimple.open_dataset()
-    validate_conversion(read_data, converted_vars, ncsimple.data, is_longer=True)
+    validate_conversion(read_data, converted_vars, ncsimple.data, is_longer=False)
 
 
 def validate_conversion(
