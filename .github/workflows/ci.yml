@@ -34,4 +34,4 @@ jobs:
         run: ruff format --check .
 
       - name: Run tests
-        run: pytest
+        run: pytest pixcdust/tests --realdata -v -rs --cov=pixcdust --cov-report=term-missing --cov-report=html
