@@ -15,7 +15,7 @@ from pixcdust.readers import GpkgReader
 from pixcdust.readers.netcdf import NcSimpleReader
 from pixcdust.readers.zarr import ZarrReader
 
-#LIM_AREA_POL = Polygon(
+# LIM_AREA_POL = Polygon(
 #    [
 #        (-1.50580, 43.39543),
 #        (-1.36597, 43.39543),
@@ -23,7 +23,7 @@ from pixcdust.readers.zarr import ZarrReader
 #        (-1.50580, 43.56471),
 #        (-1.50580, 43.39543),
 #    ]
-#)
+# )
 LIM_AREA_POL = Polygon(
     [
         (-52.90580, 4.49543),
