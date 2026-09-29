@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: ["**"]
   workflow_dispatch:
+    inputs:
+      download-test:
+        description: "Run download from hydroweb.next tests"
+        require: true
+        type: boolean
+        default: false
 
 
 jobs:
@@ -36,4 +42,12 @@ jobs:
         run: ruff format --check .
 
       - name: Run tests
-        run: pytest pixcdust/tests --realdata -v -rs --cov=pixcdust --cov-report=term-missing --cov-report=html
+        env:
+          HYDROWEB_API_KEY: ${{ secrets.HYDROWEB_API_KEY }}
+          EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY: ${{ secrets.EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY }}
+        run: |
+          if [ "${{ inputs.download-test }}" = "true" ]; the
+            pytest pixcdust/tests --dl --realdata -v -rs --cov=pixcdust --cov-report=term-missing --cov-report=html
+          else
+            pytest pixcdust/tests --realdata -v -rs --cov=pixcdust --cov-report=term-missing --cov-report=html
+          fi
