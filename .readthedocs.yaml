@@ -4,9 +4,10 @@ build:
   os: "ubuntu-22.04"
   tools:
     python: "3.12"
-    pandoc: "3.1"
   jobs:
     post_install:
+      - sudo apt-get update
+      - sudo apt-get install -y pandoc
       # Install poetry
       # https://python-poetry.org/docs/#installing-manually
       - pip install poetry
@@ -15,13 +16,6 @@ build:
       # VIRTUAL_ENV needs to be set manually for now.
       # See https://github.com/readthedocs/readthedocs.org/pull/11152/
       - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install --with docs
-
-python:
-  install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - doc
 
 
 sphinx:
