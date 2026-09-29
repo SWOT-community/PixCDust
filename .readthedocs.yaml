@@ -6,8 +6,7 @@ build:
     python: "3.12"
   jobs:
     post_install:
-      - sudo apt-get update
-      - sudo apt-get install -y pandoc
+      - pip install pypandoc_binary
       # Install poetry
       # https://python-poetry.org/docs/#installing-manually
       - pip install poetry
