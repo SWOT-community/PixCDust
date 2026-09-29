@@ -1,7 +1,7 @@
 import argparse
 import json
 import os
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from pixcdust.downloaders.hydroweb_next import PixCDownloader
@@ -84,8 +84,8 @@ def download_test_data(path_download: Path, backend: str) -> None:
     """
     dates = (
         # LOCALE timezone
-        datetime(2024, 8, 1, tzinfo=timezone.utc),
-        datetime(2024, 8, 3, tzinfo=timezone.utc),
+        datetime(2024, 8, 1, tzinfo=UTC),
+        datetime(2024, 8, 3, tzinfo=UTC),
     )
 
     # geometry = "POLYGON((-1.50580 43.39543,-1.36597 43.39543,-1.36597 43.56471,-1.50580 43.56471,-1.50580 43.39543))"
