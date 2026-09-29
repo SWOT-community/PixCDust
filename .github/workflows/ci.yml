@@ -47,7 +47,12 @@ jobs:
           EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY: ${{ secrets.EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY }}
         run: |
           if [ "${{ inputs.download-test }}" = "true" ]; then
-            pytest pixcdust/tests --dl --realdata -v -rs --cov=pixcdust --cov-report=term-missing --cov-report=html
+            pytest pixcdust/tests --dl --realdata -v -rs --cov=pixcdust --cov-report=term-missing --cov-report=html --cov-report=markdown-coverage.md
           else
-            pytest pixcdust/tests --realdata -v -rs --cov=pixcdust --cov-report=term-missing --cov-report=html
+            pytest pixcdust/tests --realdata -v -rs --cov=pixcdust --cov-report=term-missing --cov-report=html --cov-report=markdown-coverage.md
           fi
+      - name: Coverage summary
+        if: always()
+        run: |
+          echo "## Code coverage" >> "$GITHUB_STEP_SUMMARY"
+          cat markdown-coverage.md >> "$GITHUB_STEP_SUMMARY"
