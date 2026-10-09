@@ -307,10 +307,10 @@ class DefaultDownloader(Downloader):
     def define_query(self) -> dict:
         if self.dates is not None:
             self.query_args["start_datetime"] = {
-                "gte": self.dates[0].isoformat(timespec="milliseconds") + "Z"
+                "gte": self.dates[0].isoformat(timespec="milliseconds")
             }
             self.query_args["end_datetime"] = {
-                "lte": self.dates[1].isoformat(timespec="milliseconds") + "Z"
+                "lte": self.dates[1].isoformat(timespec="milliseconds")
             }
 
         return self.query_args

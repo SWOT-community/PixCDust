@@ -100,9 +100,22 @@ class Nc2ZarrConverter(Converter):
                 orbit_info=True,
             )
 
-            zc_ds = zcollection.Dataset.from_xarray(
-                xr_ds.to_xarray().drop_vars(self.__cst.default_added_points_name),
+            # Convert time from object type to datetime type to avoid problem with dask
+            xr_ds_xarray = xr_ds.to_xarray().drop_vars(
+                self.__cst.default_added_points_name
             )
+
+            time = xr_ds_xarray["time"].values
+            import pandas
+            import xarray
+
+            time2 = pandas.DatetimeIndex(time).tz_localize(None).to_numpy()
+            xr_ds_xarray["time"] = xarray.DataArray(time2, dims=("points",))
+            zc_ds = zcollection.Dataset.from_xarray(xr_ds_xarray)
+
+            #            zc_ds = zcollection.Dataset.from_xarray(
+            #                xr_ds.to_xarray().drop_vars(self.__cst.default_added_points_name),
+            #            )
             zc_ds.block_size_limit = self.__chunk_size
             zc_ds.chunks = {next(iter(zc_ds.dimensions.keys())): self.__chunk_size}
 

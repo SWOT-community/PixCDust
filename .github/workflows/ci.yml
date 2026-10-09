@@ -5,6 +5,14 @@ on:
     branches: ["**"]
   pull_request:
     branches: ["**"]
+  workflow_dispatch:
+    inputs:
+      download-test:
+        description: "Run download from hydroweb.next tests"
+        require: true
+        type: boolean
+        default: false
+
 
 jobs:
   lint-and-test:
@@ -34,4 +42,17 @@ jobs:
         run: ruff format --check .
 
       - name: Run tests
-        run: pytest
+        env:
+          HYDROWEB_API_KEY: ${{ secrets.HYDROWEB_API_KEY }}
+          EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY: ${{ secrets.EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY }}
+        run: |
+          if [ "${{ inputs.download-test }}" = "true" ]; then
+            pytest pixcdust/tests --dl --realdata -v -rs --cov=pixcdust --cov-report=term-missing --cov-report=html --cov-report=markdown:coverage.md
+          else
+            pytest pixcdust/tests --realdata -v -rs --cov=pixcdust --cov-report=term-missing --cov-report=html --cov-report=markdown:coverage.md
+          fi
+      - name: Coverage summary
+        if: always()
+        run: |
+          echo "## Code coverage" >> "$GITHUB_STEP_SUMMARY"
+          cat coverage.md >> "$GITHUB_STEP_SUMMARY"

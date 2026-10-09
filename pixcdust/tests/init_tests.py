@@ -84,13 +84,20 @@ def download_test_data(path_download: Path, backend: str) -> None:
     """
     dates = (
         # LOCALE timezone
-        datetime(2024, 8, 1, tzinfo=datetime.now(UTC).astimezone().tzinfo),
-        datetime(2024, 8, 15, tzinfo=datetime.now(UTC).astimezone().tzinfo),
+        datetime(2024, 8, 1, tzinfo=UTC),
+        datetime(2024, 8, 3, tzinfo=UTC),
     )
 
-    geometry = "POLYGON((-1.50580 43.39543,-1.36597 43.39543,-1.36597 43.56471,-1.50580 43.56471,-1.50580 43.39543))"
+    # geometry = "POLYGON((-1.50580 43.39543,-1.36597 43.39543,-1.36597 43.56471,-1.50580 43.56471,-1.50580 43.39543))"
+    geometry = "POLYGON((-1.50580 43.49543,-1.49597 43.49543,-1.49597 43.50471,-1.50580 43.50471,-1.50580 43.49543))"
+
     pixcdownloader = PixCDownloader(
-        geometry, dates, backend=backend, verbose=0, path_download=str(path_download)
+        geometry,
+        dates,
+        backend=backend,
+        verbose=3,
+        path_download=str(path_download),
+        #        geometry, dates, backend=backend, verbose=0, path_download=str(path_download)
     )
     pixcdownloader.search_download()
 
