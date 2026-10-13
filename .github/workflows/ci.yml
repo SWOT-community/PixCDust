@@ -56,3 +56,14 @@ jobs:
         run: |
           echo "## Code coverage" >> "$GITHUB_STEP_SUMMARY"
           cat coverage.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Test notebooks
+        run: |
+          mkdir -p /tmp/notebooks
+
+          for notebook in pixcdust/notebooks/*.ipynb; do
+            name=$(basename "$notebook")
+            echo "Testing $name"
+            papermill "$notebook" "/tmp/notebooks/$name"
+          done
+

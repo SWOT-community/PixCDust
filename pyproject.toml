@@ -48,10 +48,11 @@ dev = [
     "flake8>=7.3.0,<8.0.0",
     "ruff>=0.16.5,<0.17.5",
     "pytest-cov>=7.1",
+    "papermill>=2.7.0",
 ]
 doc = [
     "gitpython",
-    "sphinx",
+    "sphinx>=8.1,<10",
     "sphinx-rtd-theme",
     "pydata-sphinx-theme",
     "sphinx-autodoc-typehints",
