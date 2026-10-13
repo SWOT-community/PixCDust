@@ -61,15 +61,10 @@ jobs:
         run: |
           mkdir -p /tmp/notebooks
 
-          for notebook in pixcdust/notebooks/convert/*.ipynb; do
-            name=$(basename "$notebook")
-            echo "Testing $name"
-            papermill "$notebook" "/tmp/notebooks/$name"
-          done
-          for notebook in pixcdust/notebooks/read_and_use/*.ipynb; do
-            name=$(basename "$notebook")
-            echo "Testing $name"
-            papermill "$notebook" "/tmp/notebooks/$name"
-          done
+          papermill pixcdust/notebooks/convert/download_pixc_to_gpkg.ipynb /tmp/notebooks/download_pixc_to_gpkg
+          papermill pixcdust/notebooks/convert/download_pixc_to_zarr.ipynb /tmp/notebooks/download_pixc_to_zarr
+          papermill pixcdust/notebooks/convert/convert_to_zcollection.ipynb /tmp/notebooks/convert_to_zcollection
+          papermill pixcdust/notebooks/convert/dggs_tuto.ipynb /tmp/notebooks/dggs_tuto
+          papermill pixcdust/notebooks/read_and_use/read_netcdf.ipynb /tmp/notebooks/read_netcdf
 
 
