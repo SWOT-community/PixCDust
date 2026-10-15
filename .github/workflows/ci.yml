@@ -45,6 +45,7 @@ jobs:
         env:
           HYDROWEB_API_KEY: ${{ secrets.HYDROWEB_API_KEY }}
           EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY: ${{ secrets.EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY }}
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
         run: |
           if [ "${{ inputs.download-test }}" = "true" ]; then
             pytest pixcdust/tests --dl --realdata -v -rs --cov=pixcdust --cov-report=term-missing --cov-report=html --cov-report=markdown:coverage.md
@@ -58,6 +59,10 @@ jobs:
           cat coverage.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test notebooks
+        env:
+          HYDROWEB_API_KEY: ${{ secrets.HYDROWEB_API_KEY }}
+          EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY: ${{ secrets.EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY }}
+          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
         run: |
           mkdir -p /tmp/notebooks
 
