@@ -15,16 +15,15 @@
 #
 """Downloaders for podacc. Require an API-Key see HELP_MESSAGE."""
 
-import earthaccess
 import os
-import geopandas
-import shapely
-from shapely.geometry import shape
 from datetime import date, datetime, time
 from pathlib import Path
 
-from pixcdust.downloaders.hydroweb_next import Downloader
+import earthaccess
+import shapely
+from shapely.geometry import shape
 
+from pixcdust.downloaders.hydroweb_next import Downloader
 
 HELP_MESSAGE = """
 Download products from podaac

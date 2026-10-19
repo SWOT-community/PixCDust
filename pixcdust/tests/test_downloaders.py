@@ -1,7 +1,6 @@
 import pytest
 
-from pixcdust.tests.init_tests import download_test_data
-from pixcdust.tests.init_tests import download_test_data_podaac
+from pixcdust.tests.init_tests import download_test_data, download_test_data_podaac
 
 
 @pytest.mark.downloader
