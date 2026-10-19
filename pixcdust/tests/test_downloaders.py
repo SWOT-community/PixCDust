@@ -43,6 +43,7 @@ def test_hydroweb_next_eodag(hydroweb_env, input_folder, tmp_folder):
     for dl_f in dl_files:
         assert dl_f.stat().st_size == 160376049
 
+
 @pytest.mark.downloader
 def test_podaac_download(hydroweb_env, input_folder, tmp_folder):
     """Test podaac downloader.
@@ -61,6 +62,3 @@ def test_podaac_download(hydroweb_env, input_folder, tmp_folder):
     #        assert dl_f.stat().st_size == input_f.stat().st_size
     for dl_f in dl_files:
         assert dl_f.stat().st_size == 160376049
-
-
-

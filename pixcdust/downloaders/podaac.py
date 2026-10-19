@@ -92,7 +92,6 @@ class PodaacDownloader(Downloader):
     def _search(self, geom=None) -> None:
         """Search granules intersecting the requested geometry."""
 
-
         kwargs = {
             "short_name": self.collection_name,
             **self.query_args,
@@ -109,13 +108,12 @@ class PodaacDownloader(Downloader):
                     # Search each polygon separately; search_download()
                     # already handles GeoDataFrames one geometry at a time.
                     kwargs["polygon"] = list(
-                        max(geometry.geoms, key=lambda polygon: polygon.area)
-                        .exterior.coords
+                        max(
+                            geometry.geoms, key=lambda polygon: polygon.area
+                        ).exterior.coords
                     )
                 else:
-                    raise ValueError(
-                        f"Unsupported geometry type: {geometry.geom_type}"
-                    )
+                    raise ValueError(f"Unsupported geometry type: {geometry.geom_type}")
 
         results = earthaccess.search_data(**kwargs)
 
@@ -147,9 +145,7 @@ class PodaacDownloader(Downloader):
 
         # Filter on .nc file
         self.downloaded_paths = [
-            str(Path(path))
-            for path in paths
-            if Path(path).suffix.lower() == ".nc"
+            str(Path(path)) for path in paths if Path(path).suffix.lower() == ".nc"
         ]
 
 
@@ -170,6 +166,3 @@ def PodaacPixCDownloader(*args, **kwargs):
             of (str, tuple, list, geopandas.GeoDataFrame)
     """
     return PodaacDownloader("SWOT_L2_HR_PIXC_D", *args, **kwargs)
-    
-    
-

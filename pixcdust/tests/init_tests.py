@@ -105,6 +105,7 @@ def download_test_data(path_download: Path, backend: str) -> None:
 
 TEST_DATA_COUNT = 2
 
+
 def download_test_data_podaac(path_download: Path) -> None:
     """Download the test data from podaac.
 
@@ -130,7 +131,6 @@ def download_test_data_podaac(path_download: Path) -> None:
 
 
 TEST_DATA_COUNT = 2
-
 
 
 def check_test_data(path_download: Path) -> bool:
