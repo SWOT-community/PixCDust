@@ -50,6 +50,8 @@ dev = [
     "ruff>=0.16.5,<0.17.5",
     "pytest-cov>=7.1",
     "papermill>=2.7.0",
+    "build>=1.6.1",
+    "twine>=7.0.0",
 ]
 doc = [
     "gitpython",
