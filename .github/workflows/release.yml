@@ -87,7 +87,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/project/pixcdusttest/
+      url: https://pypi.org/project/pixcdust/
 
     permissions:
       id-token: write
