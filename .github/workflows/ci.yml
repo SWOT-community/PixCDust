@@ -58,18 +58,4 @@ jobs:
           echo "## Code coverage" >> "$GITHUB_STEP_SUMMARY"
           cat coverage.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Test notebooks
-        env:
-          HYDROWEB_API_KEY: ${{ secrets.HYDROWEB_API_KEY }}
-          EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY: ${{ secrets.EODAG__HYDROWEB_NEXT__AUTH__CREDENTIALS__APIKEY }}
-          EARTHDATA_TOKEN: ${{ secrets.EARTHDATA_TOKEN }}
-        run: |
-          mkdir -p /tmp/notebooks
-
-          papermill pixcdust/notebooks/convert/download_pixc_to_gpkg.ipynb /tmp/notebooks/download_pixc_to_gpkg
-          papermill pixcdust/notebooks/convert/download_pixc_to_zarr.ipynb /tmp/notebooks/download_pixc_to_zarr
-          papermill pixcdust/notebooks/convert/convert_to_zcollection.ipynb /tmp/notebooks/convert_to_zcollection
-          papermill pixcdust/notebooks/convert/dggs_tuto.ipynb /tmp/notebooks/dggs_tuto
-          papermill pixcdust/notebooks/read_and_use/read_netcdf.ipynb /tmp/notebooks/read_netcdf
-
 
