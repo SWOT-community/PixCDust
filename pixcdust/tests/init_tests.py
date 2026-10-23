@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from pixcdust.downloaders.hydroweb_next import PixCDownloader
+from pixcdust.downloaders.podaac import PodaacPixCDownloader
 
 
 class JsonTestsSettings:
@@ -95,6 +96,33 @@ def download_test_data(path_download: Path, backend: str) -> None:
         geometry,
         dates,
         backend=backend,
+        verbose=3,
+        path_download=str(path_download),
+        #        geometry, dates, backend=backend, verbose=0, path_download=str(path_download)
+    )
+    pixcdownloader.search_download()
+
+
+TEST_DATA_COUNT = 2
+
+
+def download_test_data_podaac(path_download: Path) -> None:
+    """Download the test data from podaac.
+
+    Args:
+        path_download: where to store the test data.
+    """
+    dates = (
+        # LOCALE timezone
+        datetime(2024, 8, 1, tzinfo=UTC),
+        datetime(2024, 8, 3, tzinfo=UTC),
+    )
+
+    geometry = "POLYGON((-1.50580 43.49543,-1.49597 43.49543,-1.49597 43.50471,-1.50580 43.50471,-1.50580 43.49543))"
+
+    pixcdownloader = PodaacPixCDownloader(
+        geometry,
+        dates,
         verbose=3,
         path_download=str(path_download),
         #        geometry, dates, backend=backend, verbose=0, path_download=str(path_download)
