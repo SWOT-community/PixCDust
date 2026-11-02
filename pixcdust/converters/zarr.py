@@ -21,16 +21,18 @@ from collections.abc import Iterable
 from pathlib import Path
 
 import dask
+import dask.distributed
 import dask.utils
 import fsspec
 import geopandas as gpd
-import zcollection
-import zcollection.indexing
+import pandas
 
 from pixcdust.converters.core import Converter
 from pixcdust.readers.netcdf import NcSimpleConstants, NcSimpleReader
 
 TIME_VARNAME = "time"
+# TODO is there a better solution than fix the chunk size here ?
+CHUNK_SIZE = dask.utils.parse_bytes("2MiB")
 
 
 class Nc2ZarrConverter(Converter):
@@ -74,7 +76,6 @@ class Nc2ZarrConverter(Converter):
             area_of_interest=area_of_interest,
             conditions=conditions,
         )
-        self.collection: zcollection.collection.Collection = None
         self.__time_varname: str = TIME_VARNAME
         self.__fs = fsspec.filesystem("file")
         self.__chunk_size = dask.utils.parse_bytes("2MiB")
@@ -84,6 +85,9 @@ class Nc2ZarrConverter(Converter):
 
         if mode in ["o", "overwrite"] and os.path.exists(path_out):
             shutil.rmtree(path_out)
+
+        path_out = Path(path_out)
+        append = path_out.exists()
 
         with (
             dask.distributed.LocalCluster(processes=True) as cluster,
@@ -106,41 +110,29 @@ class Nc2ZarrConverter(Converter):
             )
 
             time = xr_ds_xarray["time"].values
-            import pandas
-            import xarray
 
             time2 = pandas.DatetimeIndex(time).tz_localize(None).to_numpy()
-            xr_ds_xarray["time"] = xarray.DataArray(time2, dims=("points",))
-            zc_ds = zcollection.Dataset.from_xarray(xr_ds_xarray)
+            xr_ds_xarray = xr_ds_xarray.assign_coords(time=("points", time2))
 
-            #            zc_ds = zcollection.Dataset.from_xarray(
-            #                xr_ds.to_xarray().drop_vars(self.__cst.default_added_points_name),
-            #            )
-            zc_ds.block_size_limit = self.__chunk_size
-            zc_ds.chunks = {next(iter(zc_ds.dimensions.keys())): self.__chunk_size}
+            # Approximate the original 2 MiB chunk-size target.
+            npoints = xr_ds_xarray.sizes.get("points", 0)
+            if npoints:
+                bytes_per_point = max(1, xr_ds_xarray.nbytes // npoints)
+                chunk_points = max(1, CHUNK_SIZE // bytes_per_point)
+                xr_ds_xarray = xr_ds_xarray.chunk({"points": int(chunk_points)})
 
-            init = True
-            if not os.path.exists(path_out) and init:
-                partition_handler = zcollection.partitioning.Date(
-                    (xr_ds.cst.default_added_time_name,),
-                    "s",
-                )
-
-                self.collection = zcollection.create_collection(
-                    axis=self.__time_varname,
-                    ds=zc_ds,
-                    partition_handler=partition_handler,
-                    partition_base_dir=path_out,
-                    filesystem=self.__fs,
-                )
-                init = False
-
-            else:
-                self.collection = zcollection.open_collection(
+            if append:
+                xr_ds_xarray.to_zarr(
                     path_out,
-                    filesystem=self.__fs,
-                    mode="w",
+                    mode="a",
+                    append_dim="points",
+                    consolidated=True,
+                    zarr_version=2,
                 )
-            self.collection.insert(
-                zc_ds, merge_callable=zcollection.collection.merging.merge_time_series
-            )
+            else:
+                xr_ds_xarray.to_zarr(
+                    path_out,
+                    mode="w",
+                    consolidated=True,
+                    zarr_version=2,
+                )

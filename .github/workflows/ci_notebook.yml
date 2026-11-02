@@ -8,7 +8,7 @@ on:
 
 jobs:
   notebook-test:
-    name: Lint & Tests check
+    name: Notebook check
     runs-on: ubuntu-latest
 
     steps:
@@ -37,7 +37,6 @@ jobs:
 
           papermill pixcdust/notebooks/convert/download_pixc_to_gpkg.ipynb /tmp/notebooks/download_pixc_to_gpkg
           papermill pixcdust/notebooks/convert/download_pixc_to_zarr.ipynb /tmp/notebooks/download_pixc_to_zarr
-          papermill pixcdust/notebooks/convert/convert_to_zcollection.ipynb /tmp/notebooks/convert_to_zcollection
           papermill pixcdust/notebooks/convert/dggs_tuto.ipynb /tmp/notebooks/dggs_tuto
           papermill pixcdust/notebooks/read_and_use/read_netcdf.ipynb /tmp/notebooks/read_netcdf
 

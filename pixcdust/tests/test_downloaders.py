@@ -54,7 +54,7 @@ def test_podaac_download(hydroweb_env, input_folder, tmp_folder):
     dl_dir = tmp_folder / "download_test"
     download_test_data_podaac(dl_dir)
 
-    dl_files = sorted(dl_dir.glob("**/*.nc"))
+    dl_files = sorted(dl_dir.glob("*.nc"))
     all_input_files = sorted(input_folder.glob("**/*.nc"))
     assert len(dl_files) == len(all_input_files)
 

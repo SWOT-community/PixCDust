@@ -17,8 +17,8 @@
 
 import datetime
 
+import numpy as np
 import xarray as xr
-import zcollection
 
 from pixcdust.readers.base_reader import BaseReader
 
@@ -50,33 +50,34 @@ class ZarrReader(BaseReader):
                 Only load data dated within the interval.
         """
 
-        collection = zcollection.open_collection(
+        self.data = xr.open_zarr(
             self.path,
-            mode="r",
         )
 
-        if date_interval:
+        if date_interval is not None:
             date_min = date_interval[0]
             date_max = date_interval[1]
-            # LOCALE timezone
-            data_z = collection.load(
-                filters=lambda keys: (
-                    date_min
-                    <= datetime.datetime(
-                        keys["year"],
-                        keys["month"],
-                        keys["day"],
-                        keys["hour"],
-                        keys["minute"],
-                        keys["second"],
-                        tzinfo=datetime.datetime.now(datetime.UTC).astimezone().tzinfo,
-                    )
-                    <= date_max
+
+            if "time" not in self.data:
+                self.data.close()
+                self.data = xr.Dataset()
+                raise ValueError(
+                    "Cannot filter the Zarr dataset by date: "
+                    "no 'time' coordinate is available."
                 )
-            )
-        else:
-            data_z = collection.load()
-        if data_z is None:
-            self.data = xr.Dataset()
-        else:
-            self.data = data_z.to_xarray()
+
+            # Convert timezone-aware bounds to local naive timestamps,
+            # matching the local-time interpretation of the old reader.
+            if date_min.tzinfo is not None:
+                date_min = date_min.astimezone().replace(tzinfo=None)
+
+            if date_max.tzinfo is not None:
+                date_max = date_max.astimezone().replace(tzinfo=None)
+
+            date_min = np.datetime64(date_min.replace(tzinfo=None), "ns")
+            date_max = np.datetime64(date_max.replace(tzinfo=None), "ns")
+
+            mask = (self.data["time"] >= date_min) & (self.data["time"] <= date_max)
+            mask = mask.compute()
+
+            self.data = self.data.isel(points=mask)

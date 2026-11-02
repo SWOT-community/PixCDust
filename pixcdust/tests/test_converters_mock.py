@@ -27,7 +27,7 @@ class TestConverters(unittest.TestCase):
 
     def test_convert_ds_to_zarr(self):
         """function for testing the conversion from
-        netcdf to zarr with zcollection
+        netcdf to zarr
         """
 
         pixc = Nc2ZarrConverter(
